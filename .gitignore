@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+*.tsbuildinfo
+
+# Runtime state
+.ksk/
+.omc/
+
+# Claude Code local state
+.claude/
+
+# Windows Zone.Identifier
+*:Zone.Identifier
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Session / debug logs
+*.log

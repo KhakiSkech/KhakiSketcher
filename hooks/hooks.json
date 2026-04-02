@@ -1,0 +1,65 @@
+{
+  "description": "KhakiSketcher orchestration hooks — auto-classification, security, and file tracking",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/auto-classify.mjs\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/session-init.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/security-guard.mjs\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/post-tool-track.mjs\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/pre-compact.mjs\"",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}

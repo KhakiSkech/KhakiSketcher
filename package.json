@@ -1,0 +1,50 @@
+{
+  "name": "khaki-sketcher",
+  "version": "0.1.0",
+  "description": "Policy-driven multi-model orchestration plugin for Claude Code (Claude + Codex + Gemini)",
+  "author": "KhakiSketch",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KhakiSketch/KhakiSketcher.git"
+  },
+  "homepage": "https://github.com/KhakiSketch/KhakiSketcher",
+  "bugs": {
+    "url": "https://github.com/KhakiSketch/KhakiSketcher/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "test": "node --import tsx --test src/__tests__/*.test.ts",
+    "test:typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "bridge",
+    "hooks",
+    "scripts",
+    "skills",
+    "agents",
+    "src",
+    ".claude-plugin",
+    ".mcp.json",
+    "CLAUDE.md",
+    "build.mjs",
+    "tsconfig.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0"
+  }
+}
