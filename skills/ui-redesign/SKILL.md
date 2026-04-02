@@ -10,7 +10,7 @@ Vision-guided UI implementation: Design → Build → Verify.
 ## Usage
 
 ```
-/ksk:ui-redesign <design task, mockup reference, or or visual change request>
+/ksk:ui-redesign <design task, mockup reference, or visual change request>
 ```
 
 ## Workflow
@@ -50,7 +50,18 @@ Output format:
 - Full spec → .ksk/artifact/design-<ts>.md" -y --output-format text 2>/dev/null
 ```
 
-Fallback: `codex exec "Analyze this UI design..." --full-auto 2>/dev/null` (text-only)
+### Fallback (Gemini unavailable)
+
+```bash
+codex exec "Generate design tokens and component specifications for this UI description.
+
+## Requirements
+<describe the UI based on available information>
+
+## Output Format (IMPORTANT)
+1. Summary (key design decisions) — this is ALL Sonnet reads
+2. Details → save to .ksk/artifact/design-<ts>.md" --full-auto 2>/dev/null
+```
 
 ### Phase 2: Build — Sonnet
 
@@ -59,7 +70,6 @@ Based on design specification:
 - Implement components following the spec exactly
 - Use existing project design system if available
 - Ensure responsive behavior
-- Sonnet writes ALL code
 
 ### Phase 3: Verify — Gemini UX/Visual QA (max 3 rounds)
 
@@ -97,5 +107,15 @@ Score: N/100 | Verdict: PASS(85+) / NEEDS_WORK / FAIL" -y --output-format text 2
 - Score >= 85 → Complete
 - Score < 85 → Apply specific fixes from QA, repeat Phase 2-3
 - After 3 rounds → Report remaining issues to user
+
+## Error Handling
+- Gemini returns empty → fallback to Codex for text-based design analysis
+- Neither CLI available → Sonnet implements based on best judgment, inform user
+- Rate limited → proceed without visual QA, suggest manual review
+
+## Verify Isolation
+- Visual QA 프롬프트에 Phase 1의 디자인 결정 이유를 포함하지 마세요
+- 결과 이미지와 참조 이미지만 비교하세요
+- 편향 없는 객관적 시각 평가여야 합니다
 
 Task: {{ARGUMENTS}}

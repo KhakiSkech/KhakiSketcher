@@ -62,7 +62,21 @@ Suggestions:
 
 Save result to `.ksk/artifact/visual-qa-<ts>.md`. Sonnet reads ONLY the summary.
 
-Fallback: `codex exec "Compare these screenshots..." --full-auto 2>/dev/null` (text-only analysis)
+### Fallback (Gemini unavailable)
+
+```bash
+codex exec "Compare these two UI descriptions and identify all differences.
+
+## Before
+<describe or paste relevant code for before state>
+
+## After
+<describe or paste relevant code for after state>
+
+## Output Format (IMPORTANT)
+1. Summary (score + verdict)
+2. Details → save to .ksk/artifact/visual-qa-<ts>.md" --full-auto 2>/dev/null
+```
 
 ## Step 3: Report
 
@@ -75,5 +89,10 @@ Return the structured verdict to the user. This skill does NOT modify code.
 **Differences**: N found (M intentional, K regression)
 **Artifact**: .ksk/artifact/visual-qa-<ts>.md
 ```
+
+## Error Handling
+- Gemini returns empty → fallback to Codex for text-based comparison
+- Neither CLI available → Sonnet compares code diff directly, note lack of visual verification
+- Rate limited → proceed without external QA, suggest manual visual review
 
 Task: {{ARGUMENTS}}

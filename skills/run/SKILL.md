@@ -42,7 +42,7 @@ codex exec "Analyze this task with maximum depth.
 
 ## Output Format (IMPORTANT)
 1. Summary (2-3 sentences) — this is ALL Sonnet reads
-2. Analysis Details — save to .ksk/artifact/think-<ts>.md
+2. Analysis Details → save to .ksk/artifact/think-<ts>.md
 3. Implementation Plan (numbered steps)
 4. Risk Assessment
 
@@ -51,6 +51,19 @@ codex exec "Analyze this task with maximum depth.
 ```
 
 Save result to `.ksk/artifact/` file. Sonnet reads ONLY the summary.
+
+### Fallback (Codex unavailable)
+
+```bash
+gemini -p "Analyze this task comprehensively.
+
+## Task
+<task description>
+
+## Output Format (IMPORTANT)
+1. Summary (2-3 sentences)
+2. Details → save to .ksk/artifact/think-<ts>.md" -y --output-format text 2>/dev/null
+```
 
 ## Step 2.5: Design — Gemini (if UI-related)
 
@@ -71,6 +84,19 @@ Output as:
 
 Save result to `.ksk/artifact/` file. Sonnet reads ONLY the summary.
 
+### Fallback (Gemini unavailable)
+
+```bash
+codex exec "Generate design tokens and layout specifications for this UI change.
+
+## Requirements
+<describe based on available information>
+
+## Output Format (IMPORTANT)
+1. Summary (key decisions)
+2. Details → save to .ksk/artifact/design-<ts>.md" --full-auto 2>/dev/null
+```
+
 ## Step 3: Build — Sonnet
 
 Based on Think summary + Design summary (if applicable), implement directly.
@@ -89,9 +115,11 @@ codex exec "Review this implementation:
 4. Security: injection, XSS, auth bypass
 5. Regression risk: other code paths affected?
 
-Verdict: PASS | FAIL_MINOR | FAIL_MAJOR | FAIL_CRITICAL
+## Output Format (IMPORTANT)
+1. Summary (verdict only) — PASS | FAIL
+2. Details → save to .ksk/artifact/review-<ts>.md
 
-<diff and relevant context>" --full-auto 2>/dev/null
+<paste ONLY the diff>" --full-auto 2>/dev/null
 ```
 
 Save to `.ksk/artifact/`. Read verdict only.
@@ -117,6 +145,16 @@ Score: N/100 | Verdict: PASS(85+) / NEEDS_WORK / FAIL" -y --output-format text 2
 | FAIL_MINOR | Sonnet self-fixes. Back to Step 3 (max 3 total loops) |
 | FAIL_MAJOR | Report to user. Ask for direction. |
 | FAIL_CRITICAL | Stop. Escalate to user. |
+
+## Error Handling
+- CLI returns empty or error → try fallback CLI
+- Both CLIs unavailable → Sonnet handles directly, note lack of external verification
+- Rate limited → proceed without external model, inform user
+
+## Verify Isolation
+- Verify 프롬프트에 Think/Design 결과를 포함하지 마세요
+- 오직 diff와 관련 소스 코드만 제공하세요
+- 편향 없는 독립 리뷰여야 합니다
 
 ## Model Policy
 

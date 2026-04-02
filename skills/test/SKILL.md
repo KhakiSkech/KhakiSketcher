@@ -57,7 +57,18 @@ codex exec "Analyze this test failure with maximum depth.
 
 Save result to `.ksk/artifact/test-analysis-<ts>.md`. Sonnet reads ONLY the summary.
 
-Fallback: `gemini -p "..." -y --output-format text 2>/dev/null`
+### Fallback (Codex unavailable)
+
+```bash
+gemini -p "Analyze this test failure. Is it a test bug or production bug?
+
+## Context
+<same context>
+
+## Output Format (IMPORTANT)
+1. Summary (2-3 sentences)
+2. Details → save to .ksk/artifact/test-analysis-<ts>.md" -y --output-format text 2>/dev/null
+```
 
 ## Step 5: Coverage Gaps
 
@@ -76,5 +87,10 @@ Fallback: `gemini -p "..." -y --output-format text 2>/dev/null`
 - Gaps identified: [list]
 - Artifacts: .ksk/artifact/test-*.md
 ```
+
+## Error Handling
+- CLI returns empty or error → try fallback CLI
+- Both CLIs unavailable → Sonnet analyzes failure directly
+- Rate limited → proceed without external analysis
 
 Task: {{ARGUMENTS}}

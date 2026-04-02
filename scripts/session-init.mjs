@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * SessionStart Hook — CLI detection + lightweight routing policy
+ * SessionStart Hook — CLI detection + lightweight status
  *
- * Detects Codex/Gemini CLI availability, injects minimal policy reminder.
- * No MCP tools — Skills call CLI directly via Bash.
+ * Detects Codex/Gemini CLI availability, ensures artifact directory exists.
+ * No routing table — that lives in CLAUDE.md (single source of truth).
  */
 
 import { execSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 function detectCli(command) {
   try {
@@ -25,33 +27,24 @@ process.stdin.on('end', () => {
   const hasCodex = detectCli('codex');
   const hasGemini = detectCli('gemini');
 
+  // Ensure artifact directory
+  try {
+    mkdirSync(join(process.cwd(), '.ksk', 'artifact'), { recursive: true });
+  } catch {}
+
   const providers = [];
   if (hasCodex) providers.push('Codex');
   if (hasGemini) providers.push('Gemini');
 
   const providerNote = providers.length > 0
     ? providers.join(' + ')
-    : 'NONE (install codex or gemini CLI)';
+    : 'NONE (install codex or gemini CLI for external verification)';
 
   const reminder = [
     `<system-reminder>`,
-    `[KhakiSketcher v0.2] CLI-native orchestrator. Providers: ${providerNote}`,
-    ``,
-    `## Model Policy`,
-    `- Claude Sonnet = ALL code (write, edit, test, implement)`,
-    `- Codex CLI = reasoning (architecture, debug, review) via \`codex exec\``,
-    `- Gemini CLI = vision (screenshots, UI QA) via \`gemini -p\``,
-    ``,
-    `## Routing (keyword → skill)`,
-    `- debug/crash/race condition → /ksk:complex-debug`,
-    `- architecture/refactor/restructure → /ksk:architecture`,
-    `- UI/redesign/mockup/screenshot → /ksk:ui-redesign`,
-    `- visual-qa/compare/before-after → /ksk:visual-qa`,
-    `- review/리뷰/검토 → /ksk:code-review`,
-    `- implement/add/추가 → Claude Sonnet directly`,
-    ``,
-    `## Skills`,
-    `/ksk:run | /ksk:complex-debug | /ksk:architecture | /ksk:ui-redesign | /ksk:visual-qa | /ksk:code-review | /ksk:test`,
+    `[KhakiSketcher v0.2] Providers: ${providerNote}`,
+    `Model Policy: Sonnet=code | Codex=reasoning | Gemini=vision`,
+    `Skills: /ksk:run | /ksk:complex-debug | /ksk:architecture | /ksk:ui-redesign | /ksk:visual-qa | /ksk:code-review | /ksk:test`,
     `</system-reminder>`,
   ].join('\n');
 

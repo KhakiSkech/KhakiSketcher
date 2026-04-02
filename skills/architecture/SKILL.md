@@ -40,7 +40,18 @@ codex exec "Analyze this architecture with maximum depth.
 
 Save result to `.ksk/artifact/arch-<ts>.md`. Sonnet reads ONLY the summary.
 
-Fallback: `gemini -p "..." -y --output-format text 2>/dev/null`
+### Fallback (Codex unavailable)
+
+```bash
+gemini -p "Analyze this codebase structure. Consider module relationships, dependency patterns, and potential improvements.
+
+## Context
+<same context>
+
+## Output Format (IMPORTANT)
+1. Summary (2-3 sentences) — this is ALL Sonnet reads
+2. Details → save to .ksk/artifact/arch-<ts>.md" -y --output-format text 2>/dev/null
+```
 
 ## Phase 2: Build — Sonnet Phased Implementation
 
@@ -55,7 +66,6 @@ Based on the Think summary + implementation plan:
 
 ```bash
 codex exec "Review this architectural change:
-
 1. Does the result match the intended architecture?
 2. Are coupling metrics improved?
 3. Unintended side effects?
@@ -65,12 +75,22 @@ codex exec "Review this architectural change:
 1. Summary (verdict only) — PASS | FAIL
 2. Details → save to .ksk/artifact/arch-review-<ts>.md
 
-<paste the diff>" --full-auto 2>/dev/null
+<paste ONLY the diff>" --full-auto 2>/dev/null
 ```
 
 Save to `.ksk/artifact/`. Read verdict only.
 
 - PASS → Complete
 - FAIL → Fix specific issues, re-verify (max 3 loops)
+
+## Error Handling
+- CLI returns empty or error → try fallback CLI
+- Both CLIs unavailable → Sonnet plans and implements directly
+- Rate limited → proceed without external model, inform user
+
+## Verify Isolation
+- Verify 프롬프트에 Phase 1의 분석이나 계획을 포함하지 마세요
+- 오직 diff만 제공하세요
+- 편향 없는 독립 리뷰여야 합니다
 
 Task: {{ARGUMENTS}}

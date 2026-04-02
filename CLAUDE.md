@@ -64,6 +64,14 @@ UI 작업인 경우 추가:
 | Test | `/ksk:test` |
 | Unsure | `/ksk:run` |
 
+## Agent vs Skill
+
+| | Skill | Agent |
+|--|-------|-------|
+| 호출 | `/ksk:xxx`로 직접 호출 | Sonnet이 판단하여 sub-agent로 위임 |
+| 용도 | 주 워크플로우 | 병렬 분석이 필요할 때 |
+| 코드 수정 | Skill 내에서 Sonnet이 수행 | Agent는 읽기 전용, 결과만 반환 |
+
 ## Rules
 - Sonnet = TEXT-ONLY. 이미지 분석은 반드시 `gemini -p @image.png "prompt"`
 - 외부 모델 산출물은 항상 `.ksk/artifact/` 파일에 저장 후 요약만 읽고 구현

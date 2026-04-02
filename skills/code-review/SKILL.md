@@ -41,7 +41,18 @@ codex exec "You are a senior code reviewer. Review with maximum depth.
 
 Save result to `.ksk/artifact/review-<ts>.md`. Sonnet reads ONLY the summary.
 
-Fallback: `gemini -p "..." -y --output-format text 2>/dev/null`
+### Fallback (Codex unavailable)
+
+```bash
+gemini -p "Review this code change. Focus on readability, maintainability, and potential issues.
+
+## Context
+<same context>
+
+## Output Format (IMPORTANT)
+1. Summary (verdict + issue count)
+2. Details → save to .ksk/artifact/review-<ts>.md" -y --output-format text 2>/dev/null
+```
 
 ## Phase 2: Verify — Act on Verdict
 
@@ -61,5 +72,10 @@ Fallback: `gemini -p "..." -y --output-format text 2>/dev/null`
 **Recommendation**: [merge-ready | fix-minor-then-merge | requires-rework | escalate]
 **Artifact**: .ksk/artifact/review-<ts>.md
 ```
+
+## Error Handling
+- CLI returns empty or error → try fallback CLI
+- Both CLIs unavailable → Sonnet reviews directly, note lack of external verification
+- Rate limited → proceed without external review, inform user
 
 Task: {{ARGUMENTS}}
