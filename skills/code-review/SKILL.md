@@ -1,3 +1,8 @@
+---
+name: code-review
+description: Deep code review with PASS/FAIL verdict via ksk_reason + ksk_review_gate
+---
+
 # /ksk:code-review — Structured Code Review
 
 Perform a deep, structured code review using Codex/Gemini reasoning + ksk_review_gate verdict.
