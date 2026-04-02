@@ -1,11 +1,11 @@
 ---
 name: run
-description: Universal task entry point. Classifies tasks and routes to the appropriate specialist workflow. Trigger when user describes any coding task naturally.
+description: Universal task entry point. Classifies tasks and routes through Think → Design → Build → Verify.
 ---
 
 # KhakiSketcher Run
 
-Universal entry point for all KhakiSketcher workflows. Automatically classifies the task and routes to the optimal specialist skill.
+Universal entry point. Every task follows the Think → Design → Build → Verify workflow.
 
 ## Usage
 
@@ -13,56 +13,115 @@ Universal entry point for all KhakiSketcher workflows. Automatically classifies 
 /ksk:run <task description>
 ```
 
-## Workflow
+## Step 1: Classify
 
-You are the KhakiSketcher orchestrator. Follow these steps:
+Read the task description and classify by intent:
 
-### Step 1: Classify
-Call `ksk_classify` with the task description.
+| Keywords | Category | External Model? |
+|----------|----------|----------------|
+| debug/crash/race/intermittent | bugfix | Yes — Codex Think |
+| architecture/refactor/restructure | architecture | Yes — Codex Think |
+| UI/design/mockup/screenshot | ui | Yes — Codex Think + Gemini Design |
+| visual-qa/compare/before-after | visual_qa | Yes — Gemini only |
+| review/리뷰/검토 | code_review | Yes — Codex Think |
+| implement/add/추가/구현 | implement | Maybe — Gemini Design if UI-related |
+| test/테스트 | test | No |
 
-### Step 2: Route
-Based on the classification result:
+## Step 2: Think — Codex (if complex)
 
-| Category | Action |
-|----------|--------|
-| `implement` | Proceed directly — Claude Sonnet implements, no external tools needed |
-| `bugfix_simple` | Proceed directly — Claude Sonnet analyzes and fixes |
-| `bugfix_complex` | Follow the **complex-debug** workflow below |
-| `architecture` | Follow the **architecture** workflow below |
-| `ui_redesign` | Follow the **ui-redesign** workflow below |
-| `visual_qa` | Follow the **visual-qa** workflow below |
-| `publishing_fix` | Follow the **ui-redesign** workflow (vision-guided) |
+For non-trivial tasks, call Codex for analysis:
 
-### Step 3: Execute the routed workflow
+```bash
+codex exec "Analyze this task with maximum depth.
 
-**For bugfix_complex:**
-1. Use `ksk_reason` with effort="high" to analyze root cause
-2. Implement the fix (Claude Sonnet)
-3. Run tests
-4. Use `ksk_reason` with effort="high" for regression review
-5. Pass review through `ksk_review_gate` — loop if FAIL (max 3 iterations)
+## Task
+<task description>
 
-**For architecture:**
-1. Use `ksk_reason` with effort="xhigh" for architectural analysis
-2. Create implementation plan
-3. Implement changes (consider using worktree isolation for large changes)
-4. Run tests
-5. Use `ksk_reason` with effort="high" for review
-6. Pass through `ksk_review_gate` — loop if FAIL (max 3 iterations)
+## Context
+<relevant file paths and error logs>
 
-**For ui_redesign:**
-1. Use `ksk_vision` with mode="analyze" on reference images/screenshots
-2. Implement UI changes (Claude Sonnet)
-3. Use `ksk_vision` with mode="qa" to verify visual quality
-4. Loop if QA fails (max 3 iterations)
+## Output Format (IMPORTANT)
+1. Summary (2-3 sentences) — this is ALL Sonnet reads
+2. Analysis Details — save to .ksk/artifact/think-<ts>.md
+3. Implementation Plan (numbered steps)
+4. Risk Assessment
 
-**For visual_qa:**
-1. Use `ksk_vision` with mode="compare" on before/after screenshots
-2. Return structured verdict (score, differences, suggestions)
+## Output
+<structured analysis with compact summary + detailed artifact>" --full-auto 2>/dev/null
+```
 
-## Model Policy (STRICT)
-- **Claude Sonnet**: ALL code writing, editing, test execution
-- **ksk_reason** (Codex/Gemini fallback): Analysis and review ONLY — never writes code
-- **ksk_vision** (Gemini/Codex fallback): Visual analysis ONLY — never writes code
+Save result to `.ksk/artifact/` file. Sonnet reads ONLY the summary.
+
+## Step 2.5: Design — Gemini (if UI-related)
+
+If the task involves UI/visual changes, ask Gemini for design decisions:
+
+```bash
+gemini -p "@screenshot.png Design specification for this UI change:
+
+1. Design tokens: colors, typography, spacing, border-radius
+2. Component patterns: layout structure, hierarchy
+3. UX Analysis: user flow, readability, accessibility
+4. Visual hierarchy: what draws attention, information density
+
+Output as:
+- Summary (key decisions) — Sonnet reads this
+- Full spec → save to .ksk/artifact/design-<ts>.md" -y --output-format text 2>/dev/null
+```
+
+Save result to `.ksk/artifact/` file. Sonnet reads ONLY the summary.
+
+## Step 3: Build — Sonnet
+
+Based on Think summary + Design summary (if applicable), implement directly.
+- Read artifact files for detail when needed
+- Sonnet writes ALL code
+
+## Step 4: Verify
+
+### Always: Codex logic review
+```bash
+codex exec "Review this implementation:
+
+1. Does it match the implementation plan?
+2. Logic correctness: edge cases, null safety, error paths
+3. Performance: N+1, memory leaks, unnecessary re-renders
+4. Security: injection, XSS, auth bypass
+5. Regression risk: other code paths affected?
+
+Verdict: PASS | FAIL_MINOR | FAIL_MAJOR | FAIL_CRITICAL
+
+<diff and relevant context>" --full-auto 2>/dev/null
+```
+
+Save to `.ksk/artifact/`. Read verdict only.
+
+### If UI: Gemini UX/Visual QA
+```bash
+gemini -p "@result.png @reference.png
+UX and Visual QA:
+1. Visual fidelity (0-100): does result match reference/design spec?
+2. UX Quality: Is the flow intuitive? Any confusing elements?
+3. Spacing/Alignment: Does it feel balanced? Visual weight correct?
+4. Accessibility: WCAG contrast, target sizes
+5. Polish: Any visual glitches, misalignment, text truncation?
+
+Score: N/100 | Verdict: PASS(85+) / NEEDS_WORK / FAIL" -y --output-format text 2>/dev/null
+```
+
+## Verdict Handling
+
+| Verdict | Action |
+|--------|--------|
+| PASS | Complete. Report results. |
+| FAIL_MINOR | Sonnet self-fixes. Back to Step 3 (max 3 total loops) |
+| FAIL_MAJOR | Report to user. Ask for direction. |
+| FAIL_CRITICAL | Stop. Escalate to user. |
+
+## Model Policy
+
+- **Sonnet**: ALL code. Never delegates code writing.
+- **Codex**: Analysis, planning, review ONLY. Read-only. Saves artifacts.
+- **Gemini**: Design, UX analysis, visual QA ONLY. Read-only. Saves artifacts.
 
 Task: {{ARGUMENTS}}

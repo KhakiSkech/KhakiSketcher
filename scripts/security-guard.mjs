@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PreToolUse hook — intercepts dangerous Bash commands and sensitive file edits
+// PreToolUse hook — blocks dangerous Bash commands, warns on sensitive file edits
 
 let input = '';
 
@@ -21,12 +21,11 @@ process.stdin.on('end', () => {
     const dangerous = [
       /rm\s+-rf\s+[/~]/,
       /rm\s+-rf\s+\.\./,
-      /git\s+push\s+.*--force/,
-      /git\s+push\s+.*-f\b/,
+      /git\s+push\s+.*\s--force/,
+      /git\s+push\s+.*\s-f\b/,
       /DROP\s+(TABLE|DATABASE)/i,
       /git\s+reset\s+--hard/,
       /chmod\s+-R\s+777/,
-      /rm\s+-rf\s+\//,
       />\s*\/dev\/(sd|null|zero)/,
     ];
     for (const pattern of dangerous) {
@@ -42,7 +41,7 @@ process.stdin.on('end', () => {
 
   if (toolName === 'Write' || toolName === 'Edit') {
     const filePath = toolInput.file_path || '';
-    const sensitivePatterns = [/\.env(\.\w+)?$/, /credentials/, /secrets/, /\.pem$/, /\.key$/, /id_rsa/];
+    const sensitivePatterns = [/\.env(\.\w+)?$/, /credentials/, /secrets/, /\.pem$/, /\.key$/, /id_rsa/, /id_ed25519/];
     for (const pattern of sensitivePatterns) {
       if (pattern.test(filePath)) {
         process.stdout.write(`<system-reminder>[KSK Security] Writing to sensitive file: ${filePath}. Ensure no secrets are hardcoded.</system-reminder>`);

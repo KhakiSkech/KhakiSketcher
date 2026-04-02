@@ -1,261 +1,280 @@
 <h1 align="center">KhakiSketcher</h1>
 
 <p align="center">
-  <strong>Policy-driven multi-model orchestration for AI coding</strong><br>
-  Route tasks between Claude, Codex, Gemini — or swap in GLM — with one command.
+  <strong>확실한 개발을 위한 Multi-model 오케스트레이터</strong><br>
+  Sonnet이 구현하고, Codex가 검증하고, Gemini가 확인한다.<br>
+  <strong>Reliable development through cross-model verification.</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/KhakiSketch/KhakiSketcher/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D20-green.svg" alt="Node.js >=20">
   <img src="https://img.shields.io/badge/Claude%20Code-plugin-purple.svg" alt="Claude Code Plugin">
+  <img src="https://img.shields.io/badge/context-~800_tokens-green.svg" alt="Low overhead">
+  <img src="https://img.shields.io/badge/zero_dependencies-zero_build-brightgreen.svg" alt="Zero deps">
 </p>
 
 ---
 
-## Why We Built This
+## KhakiSketcher가 해결하는 문제
 
-We're [KhakiSketch](https://khakisketch.co.kr/) — a two-person dev studio in Cheongju, Korea. We ship production apps every day using AI coding tools, and we kept hitting the same wall:
+**Sonnet 혼자서는 한계가 있습니다.**
 
-**One model can't do everything well.**
+복잡한 아키텍처 결정에서 논리적 오류를 놓치고, 스크린샷의 2px 어긋남을 볼 수 없고, 자신이 작성한 코드의 회귀 위험을 스스로 판단하기 어렵습니다.
 
-Claude writes great code but can't see screenshots. Codex reasons deeply about architecture but shouldn't touch files. Gemini sees pixels perfectly but needs a coder beside it. And every project has different constraints — budget, latency, compliance — that dictate which model you reach for.
+KhakiSketcher는 **각 모델이 강한 것만 하도록** 분배합니다:
 
-So we built KhakiSketcher: a **routing policy layer** that sits between you and your models, automatically sending each task to the right brain.
+| 문제 | Sonnet 단독 | KhakiSketcher |
+|------|-------------|---------------|
+| 복잡한 버그 | 원인 파악 누락 가능 | Codex가 5-Whys 분석 → Sonnet이 수정 |
+| 아키텍처 설계 | 경험에 의존 | Codex가 결합도/응집도 분석 → Sonnet이 구현 |
+| UI 구현 | 시각적 검증 불가 | Gemini가 pixel 단위 QA → Sonnet이 수정 |
+| 코드 리뷰 | 자기 검증의 한계 | Codex가 PASS/FAIL 판정 |
 
-The architecture is intentionally provider-agnostic. Today it ships with Claude + Codex + Gemini. Tomorrow, **GLM can replace Claude** as the coding engine with zero changes to your workflow. Models are a commodity — your prompts and verification loops are the product.
-
----
-
-## How It Works
-
-```
-You type a task
-       |
-       v
-  KhakiSketcher classifies it
-       |
-       v
-  Routes to the right model:
-       |
-       +-- "Add a login page"     --> Claude Sonnet (code)
-       +-- "Why is this crashing?" --> Codex / Gemini (reasoning)
-       +-- "UI looks off"         --> Gemini (vision)
-       |
-       v
-  Results flow back with:
-  - Automatic fallback if a provider is down
-  - Rate-limit retry with the alternate provider
-  - Structured review gates (PASS / FAIL)
-  - Session tracking and artifacts
-```
-
-**Every workflow includes a verification loop** — analyze, implement, test, review — so you don't ship broken code.
+**핵심**: 자동화가 아닙니다. **교차 검증(Cross-validation)** 입니다.
 
 ---
 
-## Quick Start
+## 모델 역할
 
-### Prerequisites
-
-- [Claude Code](https://claude.ai/code) CLI
-- Node.js >= 20
-
-### Install
-
-```bash
-# From GitHub
-claude plugin marketplace add https://github.com/KhakiSketch/KhakiSketcher
-claude plugin install khaki-sketcher
-```
-
-Or from source:
-
-```bash
-git clone https://github.com/KhakiSketch/KhakiSketcher.git
-cd KhakiSketcher
-npm install
-npm run build
-claude plugin install .
-```
-
-### Optional Providers
-
-KhakiSketcher detects what's available at session start and adapts automatically.
-
-| Provider | Install | Enables |
-|----------|---------|---------|
-| [Codex CLI](https://github.com/openai/codex) | `npm install -g @openai/codex` | Deep reasoning (architecture, debugging, review) |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | `npm install -g @anthropic-ai/gemini` | Vision analysis (screenshots, UI QA, design comparison) |
-
-No Codex? Gemini Pro handles reasoning. No Gemini? Codex handles vision. Neither? Everything falls back gracefully.
-
----
-
-## MCP Tools
-
-Eight tools that give Claude Code superpowers:
-
-| Tool | What It Does |
-|------|-------------|
-| `ksk_reason` | Deep reasoning via Codex (fallback: Gemini Pro). Configurable effort: low → xhigh |
-| `ksk_vision` | Image analysis via Gemini. Modes: analyze, compare, qa. Flash for speed, Pro for depth |
-| `ksk_classify` | Analyzes your prompt and returns a routing plan with provider assignments per phase |
-| `ksk_plan` | Auto-discovers relevant files by keyword, then reasons over them |
-| `ksk_review_gate` | Parses review output into structured PASS/FAIL verdicts with action items |
-| `ksk_context` | Builds role-optimized context bundles (reasoning, vision, implementation) |
-| `ksk_status` | Shows session state, recent artifacts, and provider availability |
-| `ksk_hud` | Session dashboard: provider stats, artifact counts, duration |
-
----
-
-## Skills — One Command, Full Workflow
-
-| Skill | Command | What Happens |
-|-------|---------|-------------|
-| **Run** | `/ksk:run "your task"` | Auto-classify and route to the right workflow |
-| **Complex Debug** | `/ksk:complex-debug` | Root cause analysis → fix → test → review loop |
-| **Architecture** | `/ksk:architecture` | Deep analysis → phased refactoring with verification |
-| **UI Redesign** | `/ksk:ui-redesign` | Visual delta → implement → visual QA loop |
-| **Visual QA** | `/ksk:visual-qa` | Screenshot comparison with structured verdict |
-| **Code Review** | `/ksk:code-review` | Deep review with PASS/FAIL gate |
-| **Test** | `/ksk:test` | Strategy → write → run → analyze → cover gaps |
-
-Every skill runs a **verification loop** (max 3 iterations): analyze → implement → test → review. If review fails, it loops back. If it fails critically or exhausts iterations, it escalates to you.
-
----
-
-## Agents — Domain Expertise on Demand
-
-| Agent | Specialty |
-|-------|-----------|
-| `architect` | Coupling/cohesion analysis, SOLID violations, migration strategy |
-| `debugger` | 5-Whys root cause, bisection debugging, hypothesis testing |
-| `vision-analyst` | Grid layout validation, spacing measurement, WCAG contrast checks |
-| `code-reviewer` | Logic defects, OWASP Top 10, N+1 detection, regression risk |
-| `test-engineer` | Boundary analysis, coverage gaps, regression test selection |
-| `performance-engineer` | N+1 queries, memory leaks, bundle size profiling |
-| `doc-writer` | README, API docs, changelog generation |
-| `router` | Task classification and routing (lightweight, always-on) |
-
-Each agent comes with domain-specific prompts encoding real debugging and review frameworks — not generic instructions.
-
----
-
-## Hooks — Automatic Intelligence
-
-| Hook | When | What |
+| 모델 | 역할 | 비유 |
 |------|------|------|
-| `auto-classify` | You submit a prompt | Detects intent, suggests the right skill |
-| `session-init` | Session starts | Detects available CLIs, builds provider map |
-| `security-guard` | Before Bash/Write/Edit | Blocks `rm -rf /`, `DROP TABLE`, force push |
-| `post-tool-track` | After file edits | Tracks what files changed in-session |
-| `pre-compact` | Before context compression | Preserves session state to disk |
+| **Claude Sonnet** | 구현 + 오케스트레이션 | 실무자 — 모든 코드를 직접 작성 |
+| **Codex CLI** | Deep reasoning (Opus 대체) | 시니어 아키텍트 — 분석, 리뷰, 디버깅만 (코드 작성 안 함) |
+| **Gemini CLI** | Vision 분석 | 디자이너/QA — 스크린샷, UI QA, 시각 비교만 (코드 작성 안 함) |
+
+### 엄격한 정책
+
+- **Sonnet만 코드를 작성합니다.** Codex와 Gemini는 절대 코드를 수정하지 않습니다.
+- **필요한 순간에만** 외부 모델을 호출합니다. 간단한 작업은 Sonnet이 직접 처리합니다.
+- CLI가 설치되지 않았거나 rate limit에 걸리면 **자동으로 다른 CLI로 fallback** 합니다.
 
 ---
 
-## Natural Language Routing
+## 동작 방식
 
-Just talk. KhakiSketcher understands intent:
+### 기본 원리: Execute → Verify → Feedback Loop
 
-| You say... | Routes to |
-|------------|-----------|
-| "Why is this crashing?" | `ksk_reason` (high effort) |
-| "Refactor the architecture" | `ksk_reason` (xhigh effort) |
-| "UI looks wrong" | `ksk_vision` (analyze) |
-| "Compare before/after" | `ksk_vision` (compare) |
-| "Add a login feature" | Claude Sonnet directly |
-| "Review this code" | `ksk_reason` + `ksk_review_gate` |
+```
+┌─────────┐     ┌─────────┐     ┌─────────┐
+│  Sonnet  │────▶│  Codex  │────▶│  Sonnet  │
+│ (구현)   │     │ (검증)  │     │ (수정)   │
+└─────────┘     └─────────┘     └─────────┘
+      ▲                               │
+      └───────────────────────────────┘
+              FAIL → 재시도 (max 3회)
+              PASS → 완료
+```
 
----
-
-## Model Policy
-
-| Role | Primary | Fallback | Tasks |
-|------|---------|----------|-------|
-| **Code** | Claude Sonnet | GLM (pluggable) | Writing, editing, refactoring, testing |
-| **Reasoning** | Codex CLI | Gemini Pro | Architecture, debugging, code review |
-| **Vision** | Gemini CLI | Codex CLI | Screenshots, UI QA, design comparison |
-
-Claude Sonnet operates as a text-only coding engine. All image analysis is delegated to Gemini via `ksk_vision`.
-
-**Provider swap is by design.** The architecture uses a provider abstraction layer — `codex-runner` and `gemini-runner` are interchangeable modules behind a common interface. Replacing Claude with GLM (or any other coding model) requires implementing one runner, not rewriting the orchestration logic.
+1. Sonnet이 코드를 구현합니다
+2. 외부 모델(Codex/Gemini)이 결과를 검증합니다
+3. PASS면 완료, FAIL이면 피드백 기반으로 수정 후 재검증
 
 ---
 
-## Configuration
+## 실제 사용 시나리오
 
-### Environment Variables
+### 1. 일반 구현 — 외부 모델 불필요
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `KSK_GEMINI_PRO_MODEL` | `gemini-2.5-pro` | Gemini model for reasoning/vision |
-| `KSK_GEMINI_FLASH_MODEL` | `gemini-2.0-flash` | Gemini Flash for rapid vision iteration |
-| `KSK_CODEX_TIMEOUT` | `120000` | Codex CLI timeout in ms |
+```
+👤 "로그인 페이지 만들어줘"
+👤 "Add a login page"
 
-### Session State
+→ Sonnet이 직접 구현 → 완료
+  (Codex/Gemini 개입 없음)
+```
 
-KhakiSketcher maintains session state in `.ksk/` within your project:
-- `session.json` — Atomic writes for crash safety
-- `artifacts/` — Reasoning results, vision reports, review verdicts
+### 2. 복잡한 버그 — Codex 검증 루프
+
+```
+👤 "프로덕션에서만 간헐적으로 에러 나"
+👤 "Intermittent crash in production"
+
+1. Sonnet: 컨텍스트 수집 (에러 로그, 스택트레이스, 소스 코드)
+2. Sonnet → codex exec "5-Whys 근본원인 분석"
+3. Codex: 경쟁 가설 → 증거 → 근본원인 도출
+4. Sonnet: 근본원인 기반 수정 구현
+5. Sonnet: 테스트 실행 + 재현 테스트 작성
+6. Sonnet → codex exec "회귀 리뷰 (PASS/FAIL 판정)"
+7. PASS → 완료 / FAIL → 4번으로 복귀 (max 3회)
+```
+
+### 3. 아키텍처 리팩터링 — Codex 심층 분석
+
+```
+👤 "이 모듈 구조가 너무 엉망이야. 리팩터해줘"
+👤 "Refactor this module structure"
+
+1. Sonnet: 의존성 맵핑 (import chains, module boundaries)
+2. Sonnet → codex exec "결합도/응집도 분석 + 마이그레이션 전략"
+3. Codex: SOLID 위반, 순환 의존성, 변경 영향 범위 분석
+4. Sonnet: 단계별 구현 계획 수립
+5. Sonnet: 계획에 따라 단계별 구현 (각 단계마다 테스트)
+6. Sonnet → codex exec "아키텍처 리뷰"
+7. PASS → 완료 / FAIL → 수정 후 재리뷰 (max 3회)
+```
+
+### 4. UI 구현 — Gemini 시각 검증
+
+```
+👤 "이 목업대로 페이지 만들어줘"
+👤 "Implement this mockup"
+
+1. Sonnet → gemini -p @mockup.png "레이아웃/간격/색상 분석"
+2. Gemini: grid system, spacing, typography, 접근성 분석
+3. Sonnet: 분석 결과 기반 UI 구현
+4. Sonnet → gemini -p @result.png @mockup.png "QA 비교"
+5. Gemini: 0-100점 평가 + 차이점 나열
+6. 85점 이상 → 완료 / 미만 → 수정 후 재검증 (max 3회)
+```
+
+### 5. 코드 리뷰 — Codex 구조화 판정
+
+```
+👤 "이 PR 리뷰해줘"
+👤 "Review this PR"
+
+1. Sonnet: git diff 수집
+2. Sonnet → codex exec "구조화된 코드 리뷰"
+3. Codex: 로직 결함, 보안, 성능, 컨벤션 검사
+4. 판정: PASS / FAIL_MINOR / FAIL_MAJOR / FAIL_CRITICAL
+5. PASS → 리뷰 완료
+   FAIL_MINOR → Sonnet이 self-fix 후 재리뷰
+   FAIL_MAJOR → 사용자에게 에스컬레이션
+   FAIL_CRITICAL → 즉시 중단, 사용자 확인 필요
+```
 
 ---
 
-## Architecture
+## Skill 목록
+
+| Skill | 사용 시나리오 | 외부 CLI |
+|-------|--------------|----------|
+| `/ksk:run` | 모든 작업의 진입점. 자동 분류 후 라우팅 | — |
+| `/ksk:complex-debug` | 크래시, race condition, 간헐적 버그 | `codex exec` |
+| `/ksk:architecture` | 구조 분석, 리팩터링, 마이그레이션 | `codex exec` |
+| `/ksk:ui-redesign` | 목업 구현, 디자인 변경, UI 개선 | `gemini -p @image` |
+| `/ksk:visual-qa` | Before/After 비교, pixel-level QA | `gemini -p @image` |
+| `/ksk:code-review` | PR 리뷰, PASS/FAIL 구조화 판정 | `codex exec` |
+| `/ksk:test` | 테스트 전략, 실행, 커버리지 분석 | — |
+
+모든 Skill은 **검증 루프(verify loop)** 를 포함합니다: 분석 → 구현 → 테스트 → 리뷰 (최대 3회 반복).
+
+---
+
+## Agent 목록
+
+| Agent | 역할 | 특징 |
+|-------|------|------|
+| `architect` | 아키텍처 분석 | 읽기 전용, Codex 호출 |
+| `debugger` | 근본원인 분석 | 읽기 전용, 5-Whys 방법론 |
+| `vision-analyst` | 시각 분석 | 읽기 전용, Gemini 호출 |
+
+Agent는 **직접 코드를 수정하지 않습니다.** 분석 결과만 반환하며, 구현은 항상 Sonnet이 담당합니다.
+
+---
+
+## 자연어 라우팅
+
+한국어/영어 자연어로 요청하면, Sonnet이 의도를 파악하여 적절한 Skill로 라우팅합니다:
+
+| 사용자 요청 | 라우팅 |
+|-------------|--------|
+| "에러나" / "안돼" / "crash" / "bug" | 간단 → 직접 수정 / 복잡 → `/ksk:complex-debug` |
+| "구조가 이상해" / "리팩터" / "refactor" | `/ksk:architecture` |
+| "디자인 바꿔" / "목업대로" / "UI looks off" | `/ksk:ui-redesign` |
+| "비교해봐" / "before/after" | `/ksk:visual-qa` |
+| "리뷰해줘" / "검토" / "review" | `/ksk:code-review` |
+| "만들어줘" / "추가" / "implement" | Sonnet 직접 처리 |
+| "테스트" / "test" | `/ksk:test` |
+| 판단 안 설 때 | `/ksk:run` (자동 분류) |
+
+---
+
+## 설치
+
+### 사전 요구사항
+
+- [Claude Code](https://claude.ai/code) CLI (필수)
+- [Codex CLI](https://github.com/openai/codex) (선택 — reasoning용)
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) (선택 — vision용)
+
+### 플러그인 설치
+
+```bash
+claude plugin install https://github.com/KhakiSketch/KhakiSketcher
+```
+
+빌드 없음. npm install 없음. 마크다운 + 셸 스크립트만으로 동작합니다.
+
+### 세션 시작 시 자동 감지
+
+KhakiSketcher는 세션 시작 시 설치된 CLI를 자동 감지합니다:
+- Codex + Gemini 모두 있음 → 전체 기능
+- Codex만 있음 → reasoning 가능, vision은 text-only fallback
+- Gemini만 있음 → vision 가능, reasoning은 Gemini가 대체
+- 둘 다 없음 → Sonnet만으로 동작 ( 외부 검증 없음)
+
+---
+
+## 아키텍처
 
 ```
 KhakiSketcher/
-  .claude-plugin/plugin.json     Plugin metadata
-  .mcp.json                      MCP server config
-  hooks/hooks.json               Hook definitions
-  agents/                        8 agent definitions
-  skills/                        7 skill workflows
-  scripts/                       Hook scripts (auto-classify, security, tracking)
-  src/
-    tools/                       8 MCP tool handlers
-    providers/                   Provider abstraction (codex-runner, gemini-runner)
-    classify/                    Task classification engine
-    session/                     Session state management (atomic writes)
-    artifacts/                   Artifact persistence
-    utils/                       Shared utilities (smart truncation)
-  bridge/mcp-server.cjs          Built MCP server (esbuild)
+  CLAUDE.md                    라우팅 정책 (~800 토큰, 가벼운 컨텍스트)
+  .claude-plugin/plugin.json   플러그인 메타데이터
+  hooks/hooks.json             2개 훅 (session-init, security)
+  agents/                      3개 Agent 정의
+  skills/                      7개 Skill 워크플로우
+  scripts/
+    session-init.mjs           CLI 감지 + 정책 주입
+    security-guard.mjs         위험 명령 차단
+    run.cjs                    훅 실행기 (ESM shim)
 ```
 
-### Design Principles
+### 설계 원칙
 
-1. **Models are interchangeable** — Provider abstraction means any LLM can fill any role
-2. **Prompts are the product** — Domain expertise is encoded in agent prompts, not hardcoded
-3. **Verification is mandatory** — No workflow completes without a review gate
-4. **Graceful degradation** — Missing providers trigger automatic fallback, never crashes
-5. **Smart context** — Error-line-aware truncation preserves the information that matters
+| 원칙 | 설명 |
+|------|------|
+| **CLI-native** | Skill이 `codex exec` / `gemini -p`를 Bash로 직접 호출. MCP Layer 없음 |
+| **Zero build** | TypeScript 없음, 번들링 없음. 마크다운 + 셸 스크립트만 |
+| **Minimal context** | 무조건 로드 ~800 토큰. MCP tool schema 오버헤드 없음 |
+| **Model-agnostic** | 모델명 하드코딩 없음. CLI가 최신 모델을 자동 사용 |
+| **Graceful degradation** | CLI 미설치 / rate limit → 자동 fallback, 크래시 없음 |
+
+### MCP를 사용하지 않는 이유
+
+기존 v0.1.0에서는 8개의 MCP 도구가 `codex exec` / `gemini -p`를 감싸는 래퍼 역할을 했습니다. 하지만:
+
+- MCP tool schema만 ~625 토큰 소모
+- 784KB 번들 + esbuild 빌드 파이프라인 유지비용
+- Skill이 Bash로 직접 호출하면 MCP 전체가 불필요
+
+v0.2.0에서 MCP Layer를 완전히 제거하고, **Skill이 CLI를 직접 호출**하는 구조로 전환했습니다.
 
 ---
 
-## Development
+## 컨텍스트 오버헤드 비교
 
-```bash
-npm install              # Install dependencies
-npm run build            # Build MCP server bundle (esbuild)
-npm test                 # Run 35 unit tests
-npm run test:typecheck   # TypeScript type check
-npm run dev              # Watch mode rebuild
-```
+| 항목 | 타 오케스트레이터 | KhakiSketcher |
+|------|------------------|---------------|
+| MCP 도구 | 수십 개 (수천 토큰) | **0개** |
+| 무조건 로드 | 수천 토큰 | **~800 토큰** |
+| 빌드 필요 | TypeScript + 번들링 | **없음** |
+| 런타임 의존성 | npm packages | **없음** |
 
 ---
 
 ## About KhakiSketch
 
-Built by [KhakiSketch](https://khakisketch.co.kr/) — a two-person CS-major dev studio in Cheongju, Korea. We build startup MVPs, business automation systems, and production apps with Next.js, React, TypeScript, Python, FastAPI, PostgreSQL, Flutter, and Supabase.
+[KhakiSketch](https://khakisketch.co.kr/) — 청주의 2인 개발 스튜디오. CS 전공자 두 명이 Next.js, React, TypeScript, Python, FastAPI, PostgreSQL, Flutter, Supabase로 스타트업 MVP, 비즈니스 자동화, 프로덕션 앱을 만듭니다.
 
-KhakiSketcher was born from our daily work. Every routing rule, every review gate, every agent prompt comes from real debugging sessions and production incidents — not theoretical exercises. We open-sourced it because we believe the best orchestration patterns should be shared, improved, and adapted by the community.
+KhakiSketcher는 우리의 일상적인 개발 경험에서 탄생했습니다. 모든 라우팅 규칙, 검증 루프, 에이전트 프롬프트는 **실제 디버깅 세션과 프로덕션 인시던트**에서 검증된 것입니다.
 
 ---
 
 ## License
 
-[MIT](LICENSE) — Use it, fork it, improve it. Just keep the copyright notice.
-
----
+[MIT](LICENSE)
 
 <p align="center">
   <a href="https://khakisketch.co.kr/">khakisketch.co.kr</a> · <a href="https://github.com/KhakiSketch">GitHub</a>

@@ -1,11 +1,11 @@
 ---
 name: visual-qa
-description: Screenshot comparison and visual quality assessment. Use for before/after comparison, design verification, and pixel-level QA.
+description: Screenshot comparison and visual quality assessment via Gemini. Use for before/after checks and pixel-level QA.
 ---
 
 # Visual QA
 
-Single-pass visual comparison and quality assessment.
+Single-pass visual comparison: Verify (Gemini comparison) → Report.
 
 ## Usage
 
@@ -13,42 +13,67 @@ Single-pass visual comparison and quality assessment.
 /ksk:visual-qa <description of what to compare, with image paths>
 ```
 
-## Workflow
+## Step 1: Identify Images
 
-### Step 1: Gather Images
-1. Identify the images to compare (before/after, mockup/implementation, reference/current)
-2. Ensure file paths are absolute or relative to the project root
+Get the before/after image paths (absolute or relative to project root).
 
-### Step 2: Visual Comparison
-3. Call `ksk_vision` with mode="compare" and the image paths:
-   - Identify ALL visual differences
-   - Classify each: intentional / regression / side-effect
-   - Check layout alignment (8px grid)
-   - Verify spacing consistency
-   - Validate color accuracy
-   - Check accessibility (WCAG 2.1 AA contrast)
+## Step 2: Verify — Gemini Visual Comparison
 
-### Step 3: Structured Verdict
-4. Report the results in a structured format:
+```bash
+gemini -p "@/path/to/before.png @/path/to/after.png
+Compare these screenshots thoroughly:
 
-```
-Score: [0-100]
-Verdict: PASS (≥85) / NEEDS_WORK (60-84) / FAIL (<60)
+1. Visual Fidelity
+   - List ALL visual differences, classify: intentional / regression / side-effect
+   - Color accuracy: do hex values match?
+   - Typography: font sizes, weights, line heights
+   - Spacing: padding, margins, grid alignment (8px grid)
+   - Border radius consistency
+
+2. UX Quality
+   - Is visual hierarchy correct?
+   - Any confusing or distracting elements?
+   - Does the layout feel balanced?
+   - Is text readable and scannable?
+   - Are interactive elements discoverable?
+
+3. Accessibility
+   - Text contrast >= 4.5:1 (WCAG 2.1 AA)
+   - Touch targets >= 44x44px
+   - Focus indicators visible
+
+4. Polish
+   - Pixel-level misalignment?
+   - Text truncation or overflow?
+   - Image distortion or blur?
+
+## Output Format (IMPORTANT)
+1. Summary (score + verdict) — this is ALL Sonnet reads
+2. Detailed Comparison → save to .ksk/artifact/visual-qa-<ts>.md
+
+Score: N/100 | Verdict: PASS(85+) / NEEDS_WORK(60-84) / FAIL(<60)
 
 Differences:
 1. [location] - [description] - [intentional/regression]
-2. ...
-
-Accessibility:
-- Contrast: PASS/FAIL
-- Target sizes: PASS/FAIL
 
 Suggestions:
-1. [specific actionable fix]
+1. [specific actionable fix]" -y --output-format text 2>/dev/null
 ```
 
-## Model Policy
-- ALL analysis: `ksk_vision` (Gemini → Codex fallback)
-- This skill does NOT write or modify code
+Save result to `.ksk/artifact/visual-qa-<ts>.md`. Sonnet reads ONLY the summary.
+
+Fallback: `codex exec "Compare these screenshots..." --full-auto 2>/dev/null` (text-only analysis)
+
+## Step 3: Report
+
+Return the structured verdict to the user. This skill does NOT modify code.
+
+```
+## Visual QA Report
+**Score**: N/100
+**Verdict**: [PASS|NEEDS_WORK|FAIL]
+**Differences**: N found (M intentional, K regression)
+**Artifact**: .ksk/artifact/visual-qa-<ts>.md
+```
 
 Task: {{ARGUMENTS}}

@@ -1,14 +1,13 @@
 {
   "name": "khaki-sketcher",
-  "version": "0.1.0",
-  "description": "Policy-driven multi-model orchestration for Claude Code (Claude Sonnet + Codex + Gemini)",
+  "version": "0.2.0",
+  "description": "CLI-native multi-model orchestrator for Claude Code",
   "author": {
     "name": "KhakiSketch"
   },
   "repository": "https://github.com/KhakiSketch/KhakiSketcher",
   "homepage": "https://github.com/KhakiSketch/KhakiSketcher",
   "license": "MIT",
-  "keywords": ["claude-code", "orchestration", "multi-model", "codex", "gemini"],
-  "skills": "./skills/",
-  "mcpServers": "./.mcp.json"
+  "keywords": ["claude-code", "orchestration", "cli", "codex", "gemini"],
+  "skills": "./skills/"
 }

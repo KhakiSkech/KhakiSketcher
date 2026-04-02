@@ -1,49 +1,101 @@
 ---
 name: ui-redesign
-description: UI redesign with Gemini visual analysis and QA loop. Use for mockup implementation, layout changes, and visual polish.
+description: UI redesign with Gemini design generation + visual QA verification loop.
 ---
 
 # UI Redesign
 
-Vision-guided UI implementation workflow with visual QA verification loop.
+Vision-guided UI implementation: Design → Build → Verify.
 
 ## Usage
 
 ```
-/ksk:ui-redesign <design task, mockup reference, or visual change request>
+/ksk:ui-redesign <design task, mockup reference, or or visual change request>
 ```
 
 ## Workflow
 
-### Phase 1: Visual Analysis
-1. Identify reference images (mockups, screenshots, design specs)
-2. Call `ksk_vision` with mode="analyze" and the reference images:
-   - Analyze layout structure and grid system
-   - Identify typography, color, and spacing patterns
-   - Generate specific implementation guidance
-   - Note accessibility requirements (contrast, target sizes)
+### Phase 1: Design — Gemini
 
-### Phase 2: Implementation
-3. Based on the visual analysis, implement UI changes:
-   - Follow the design delta precisely
-   - Use existing design tokens and component patterns
-   - Ensure responsive behavior
-   - Claude Sonnet writes ALL code
+Generate design specification from reference images or requirements:
 
-### Phase 3: Visual QA (iterative, max 3 rounds)
-4. If possible, capture a screenshot of the result
-5. Call `ksk_vision` with mode="qa" comparing result to reference:
-   - Check alignment to 8px grid
-   - Verify spacing consistency
-   - Validate color token usage
-   - Check WCAG 2.1 AA contrast ratios
-6. Evaluate the QA result:
-   - **Score ≥ 85** → Complete
-   - **Score < 85** → Apply specific fixes from QA feedback, repeat from step 4
-   - **After 3 rounds** → Report remaining issues to user
+```bash
+gemini -p "@/path/to/mockup.png Generate a complete design specification:
 
-## Model Policy
-- Visual Analysis (Phase 1, 3): `ksk_vision` (Gemini → Codex fallback)
-- Implementation (Phase 2): Claude Sonnet ONLY
+1. Design Tokens
+   - Colors: primary, secondary, neutral, semantic colors with hex values
+   - Typography: font families, sizes (px), weights, line heights
+   - Spacing scale: base unit, padding/margin scale
+   - Border radius tokens
+
+2. Component Patterns
+   - Layout structure: grid/flex system
+   - Card/button/form/input specifications
+   - Navigation pattern
+   - Modal/dialog behavior
+
+3. UX Analysis
+   - User flow: entry point → goal → exit
+   - Readability: font sizes, contrast ratios, text density
+   - Information hierarchy: what draws attention first
+   - Interaction patterns: hover, active, disabled states
+
+4. Accessibility
+   - WCAG 2.1 AA contrast ratios
+   - Touch target sizes (>=44x44px)
+   - Focus indicators visibility
+
+Output format:
+- Summary (design decisions + rationale) — compact for implementation
+- Full spec → .ksk/artifact/design-<ts>.md" -y --output-format text 2>/dev/null
+```
+
+Fallback: `codex exec "Analyze this UI design..." --full-auto 2>/dev/null` (text-only)
+
+### Phase 2: Build — Sonnet
+
+Based on design specification:
+- Read design artifact for detailed tokens/values
+- Implement components following the spec exactly
+- Use existing project design system if available
+- Ensure responsive behavior
+- Sonnet writes ALL code
+
+### Phase 3: Verify — Gemini UX/Visual QA (max 3 rounds)
+
+```bash
+gemini -p "@/result.png @reference.png
+UX and Visual QA:
+
+1. Visual Fidelity (0-100): Does result match design spec?
+   - Color accuracy: tokens match spec?
+   - Typography: correct fonts, sizes, weights?
+   - Spacing: padding/margins match spec?
+   - Border radius: matches spec?
+
+2. UX Quality
+   - Is the visual hierarchy correct?
+   - Any confusing or distracting elements?
+   - Does the layout feel balanced?
+   - Is text readable and scannable?
+   - Are interactive elements discoverable?
+
+3. Accessibility
+   - Text contrast >= 4.5:1 (AA)
+   - Touch targets >= 44x44px
+   - Focus indicators visible
+
+4. Polish
+   - Any pixel-level misalignment?
+   - Text truncation or overflow?
+   - Image distortion or blur?
+   - Inconsistent shadows or borders?
+
+Score: N/100 | Verdict: PASS(85+) / NEEDS_WORK / FAIL" -y --output-format text 2>/dev/null
+```
+
+- Score >= 85 → Complete
+- Score < 85 → Apply specific fixes from QA, repeat Phase 2-3
+- After 3 rounds → Report remaining issues to user
 
 Task: {{ARGUMENTS}}

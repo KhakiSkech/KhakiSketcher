@@ -1,11 +1,11 @@
 ---
 name: architecture
-description: Architecture analysis and large-scale refactoring with Codex xhigh reasoning. Use for system design, module restructuring, and migration planning.
+description: Architecture analysis and large-scale refactoring with Codex reasoning. Use for system design, module restructuring, migration planning.
 ---
 
 # Architecture
 
-Deep architectural analysis and refactoring workflow with maximum reasoning depth.
+Deep architectural analysis: Think (Codex analysis) → Build (phased refactor) → Verify (review).
 
 ## Usage
 
@@ -13,42 +13,64 @@ Deep architectural analysis and refactoring workflow with maximum reasoning dept
 /ksk:architecture <architecture task or refactoring goal>
 ```
 
-## Workflow
+## Phase 1: Think — Codex Architectural Analysis
 
-### Phase 1: Architectural Analysis
-1. Gather context: identify all relevant modules, dependencies, and entry points
-2. Call `ksk_context` with role="reasoning" and key file paths
-3. Call `ksk_reason` with effort="xhigh":
-   - Analyze coupling/cohesion metrics
-   - Detect circular dependencies
-   - Check SOLID principle violations
-   - Estimate blast radius of proposed changes
-   - Recommend migration strategy (Strangler Fig / Branch by Abstraction / Direct)
+Gather context (modules, dependencies, entry points), then call Codex:
 
-### Phase 2: Implementation Plan
-4. Based on analysis, create a phased implementation plan
-   - Each phase should be independently verifiable
-   - Order phases by dependency (least dependent first)
-   - Mark high-risk phases that need extra review
+```bash
+codex exec "Analyze this architecture with maximum depth.
 
-### Phase 3: Implementation
-5. Execute each phase of the plan:
-   - For large changes, use worktree isolation (`isolation: "worktree"`)
-   - Implement one phase at a time
-   - Run tests after each phase
+## Context
+<list key files, module boundaries, dependency graph>
 
-### Phase 4: Review (iterative, max 3 rounds)
-6. Call `ksk_reason` with effort="high" for architectural review:
-   - Does the result match the intended architecture?
-   - Are coupling metrics improved?
-   - Are there unintended side effects?
-7. Pass through `ksk_review_gate`:
-   - **PASS** → Complete
-   - **FAIL** → Fix issues and re-review
+## Analyze
+1. Coupling/cohesion metrics (afferent/efferent coupling)
+2. Circular dependencies
+3. SOLID principle violations
+4. Blast radius of proposed changes
+5. Migration strategy (Strangler Fig / Branch by Abstraction / Direct)
+6. Phased implementation plan (least dependent first)
 
-## Model Policy
-- Analysis (Phase 1, 4): `ksk_reason` effort="xhigh" / "high"
-- Planning (Phase 2): Claude Sonnet
-- Implementation (Phase 3): Claude Sonnet ONLY
+## Output Format (IMPORTANT)
+1. Summary (2-3 sentences) — this is ALL Sonnet reads
+2. Detailed Analysis → save to .ksk/artifact/arch-<ts>.md
+3. Implementation Plan (numbered phases, each independently verifiable)
+4. Risk Assessment (what could break, rollback strategy)" --full-auto 2>/dev/null
+```
+
+Save result to `.ksk/artifact/arch-<ts>.md`. Sonnet reads ONLY the summary.
+
+Fallback: `gemini -p "..." -y --output-format text 2>/dev/null`
+
+## Phase 2: Build — Sonnet Phased Implementation
+
+Based on the Think summary + implementation plan:
+- Read artifact file for detailed analysis when needed
+- Execute phases in dependency order (least dependent first)
+- One phase at a time, run tests after each
+- Use worktree isolation for large changes
+- Mark high-risk phases needing extra review
+
+## Phase 3: Verify — Codex Review (max 3 rounds)
+
+```bash
+codex exec "Review this architectural change:
+
+1. Does the result match the intended architecture?
+2. Are coupling metrics improved?
+3. Unintended side effects?
+4. Are tests still passing?
+
+## Output Format (IMPORTANT)
+1. Summary (verdict only) — PASS | FAIL
+2. Details → save to .ksk/artifact/arch-review-<ts>.md
+
+<paste the diff>" --full-auto 2>/dev/null
+```
+
+Save to `.ksk/artifact/`. Read verdict only.
+
+- PASS → Complete
+- FAIL → Fix specific issues, re-verify (max 3 loops)
 
 Task: {{ARGUMENTS}}

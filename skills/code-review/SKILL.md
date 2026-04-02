@@ -1,72 +1,65 @@
 ---
 name: code-review
-description: Deep code review with PASS/FAIL verdict via ksk_reason + ksk_review_gate
+description: Deep code review with PASS/FAIL verdict via Codex reasoning. Use before merge for quality and regression checks.
 ---
 
-# /ksk:code-review — Structured Code Review
+# Code Review
 
-Perform a deep, structured code review using Codex/Gemini reasoning + ksk_review_gate verdict.
+Structured code review: Think (Codex deep review) → Verify (verdict).
 
-## When to Use
+## Usage
 
-- Reviewing a PR or diff before merge
-- Checking code quality, logic correctness, and regression risk
-- Getting a structured PASS/FAIL verdict with actionable issues
+```
+/ksk:code-review <files to review, or PR description>
+```
 
-## Workflow
+## Phase 1: Think — Codex Deep Review
 
-### Step 1 — Build Context
+Build context, then call Codex for structured review:
 
-Identify what changed:
-- Which files are being reviewed? (ask user or use recent git diff)
-- What is the intent of the change?
+```bash
+codex exec "You are a senior code reviewer. Review with maximum depth.
 
-Use `ksk_context` with `role: "reasoning"` and the relevant files.
+## Context
+<paste the diff, or describe files to review>
 
-### Step 2 — Deep Review via ksk_reason
+## Review Checklist
+1. Logic correctness (off-by-one, null refs, race conditions)
+2. Security (OWASP Top 10: injection, XSS, auth bypass)
+3. Performance anti-patterns (N+1, unnecessary re-renders, memory leaks)
+4. Code style and convention adherence
+5. Test coverage relative to change surface
+6. Regression risk: other code paths affected?
 
-Call `ksk_reason` with:
-- `effort`: "medium" for style/logic review, "high" for security or regression risk
-- `context_files`: the files under review
-- `prompt`: structured review request including:
-  - Logic correctness (off-by-one, null refs, race conditions)
-  - Security (OWASP Top 10: injection, XSS, auth bypass)
-  - Performance anti-patterns (N+1, unnecessary re-renders)
-  - Code style and convention adherence
-  - Test coverage relative to change surface
-  - Output format: use `## Verdict: PASS|FAIL_MINOR|FAIL_MAJOR|FAIL_CRITICAL` and `## Issues` with `[CRITICAL]`/`[MAJOR]`/`[MINOR]` tags
+## Output Format (IMPORTANT)
+1. Summary (verdict + issue count) — this is ALL Sonnet reads
+   Verdict: PASS | FAIL_MINOR | FAIL_MAJOR | FAIL_CRITICAL
+2. Detailed Review → save to .ksk/artifact/review-<ts>.md
+3. Issues (sorted by severity)
+4. Suggested fixes for each issue" --full-auto 2>/dev/null
+```
 
-### Step 3 — Parse Verdict via ksk_review_gate
+Save result to `.ksk/artifact/review-<ts>.md`. Sonnet reads ONLY the summary.
 
-Pass the review output to `ksk_review_gate`:
-- `review_text`: the ksk_reason output
-- `iteration`: current iteration (start at 1)
-- `max_iterations`: 2 (review loops are short)
+Fallback: `gemini -p "..." -y --output-format text 2>/dev/null`
 
-### Step 4 — Act on Verdict
+## Phase 2: Verify — Act on Verdict
 
 | Verdict | Action |
-|---------|--------|
-| PASS | Report clean review to user. Done. |
-| FAIL_MINOR | List issues. Claude self-fixes if authorized. Re-review once. |
-| FAIL_MAJOR | List issues with suggested fixes. Escalate to user for decision. |
-| FAIL_CRITICAL | Immediately escalate. Do NOT proceed with merge/commit. |
+|--------|--------|
+| PASS | Report clean review. Done. |
+| FAIL_MINOR | Sonnet self-fixes if authorized. Re-review once. |
+| FAIL_MAJOR | List issues with suggested fixes. Escalate to user. |
+| FAIL_CRITICAL | Stop. Do NOT proceed with merge/commit. |
 
 ## Output Format
-
-Always conclude with:
 
 ```
 ## Code Review Summary
 **Verdict**: [PASS|FAIL_*]
 **Issues found**: N
 **Recommendation**: [merge-ready | fix-minor-then-merge | requires-rework | escalate]
-
-[Issue list if any]
+**Artifact**: .ksk/artifact/review-<ts>.md
 ```
 
-## Notes
-
-- Do NOT modify code during review — this skill is read-only analysis
-- If files are large, focus on the diff surface, not the entire file
-- For PRs: prefer `git diff main...HEAD` as context
+Task: {{ARGUMENTS}}

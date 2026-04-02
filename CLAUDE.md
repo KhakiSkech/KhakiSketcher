@@ -1,93 +1,71 @@
-# KhakiSketcher — Model Policy & Routing Rules
+# KhakiSketcher — Model Policy & Routing
 
-## Model Policy (HARD CONSTRAINTS — NEVER VIOLATE)
+## Workflow: Think → Design → Build → Verify
 
-| Role | Model | Allowed Tasks |
-|------|-------|---------------|
-| **Code** | Claude Sonnet | Writing, editing, refactoring, testing, all file operations |
-| **Reasoning** | `ksk_reason` → Codex/Gemini | Architecture analysis, complex debugging, code review, regression analysis |
-| **Vision** | `ksk_vision` → Gemini | Screenshots, UI QA, design comparison, layout analysis |
+```
+Task → Think(Analyze) → Design(Spec) → Build(Implement) → Verify(Review)
+```
 
-**Claude Sonnet is a TEXT-ONLY coding engine in this project. Never analyze images directly — always use `ksk_vision`. If a user pastes an image, redirect them to provide a file path and use `ksk_vision` instead.**
+### Step 1. Think — Codex (1M context)
+사용자의 요청이 **기술적 복잡도가 높은 작업**인 경우:
+1. Sonnet이 컨텍스트 수집 (에러 로그, 스택트레이스, 관련 소스)
+2. Sonnet → `codex exec "분석"` → Codex가 분석 + 구현 계획 수립 → `.ksk/artifact/` 파일에 저장
+3. Sonnet이 구현 계획 요약(~500자)만 읽고 구현에 사용
 
----
+### Step 2. Design — Gemini (1M context) — UI 작업인 경우에만
+사용자의 요청에 **UI/시각적 변경**이 필요한 경우:
+1. Sonnet이 UI/비주얼 컨텍스트 수집 (스크린샷, 참고 이미지)
+2. Sonnet → `gemini -p @image "디자인 스펙 생성"`
+   - 디자인 토큰 (색상, 타이포그래피, 간격, 라운드)
+   - 컴포넌트 패턴
+   - UX 분석: 사용자 흐름, 정보 계층, 시각적 가독성
+3. 결과물을 `.ksk/artifact/` 파일에 저장
+4. Sonnet이 디자인 스펙 요약(~500자)만 읽고 구현에 사용
 
-## When to Call KhakiSketcher Tools
+### Step 3. Build — Sonnet (256K~)
+Codex의 구현 계획 + 디자인 스펙 기반으로 구현
+- Sonnet이 모든 코드를 직접 작성
+- 파일에서 필요한 부분만 Read로 참조
 
-### `ksk_reason` — Deep external reasoning
-Call when the problem requires **thinking beyond what you can reliably do alone**:
-- Architecture decisions, SOLID violations, dependency analysis → `effort: xhigh`
-- Root cause of crashes, race conditions, intermittent bugs → `effort: high`
-- Code review before merge, regression risk assessment → `effort: medium`
-- Quick feasibility check, option comparison → `effort: low`
+### Step 4. Verify — Codex + Gemini
+1. Sonnet → `codex exec "리뷰"` (로직/성능/보안 검증)
+   - 결과물을 `.ksk/artifact/` 파일에 저장
+2. Sonnet이 판정 결과 요약(~200자)을 읽고 다음 작업:
+   - PASS → 완료
+   - FAIL → 수정 후 Step 3으로 복귀 (최대 3회)
 
-### `ksk_vision` — Visual analysis (Gemini only)
-Call whenever **images are involved**:
-- UI screenshot analysis → `mode: analyze`
-- Before/after comparison → `mode: compare`
-- Pixel-perfect QA, spacing/contrast/grid → `mode: qa`
-- Use `fast: true` for rapid iteration (Flash), `fast: false` for deep analysis (Pro)
+UI 작업인 경우 추가:
+- Sonnet → `gemini -p @result.png "UX/시각 QA"` → Gemini가 시각 + UX 품질 평가 (0-100점)
 
-### `ksk_classify` — When unsure which workflow to use
-Returns a routing plan with provider assignments per phase.
+## Model Roles
+| Role | Engine | Output | Notes |
+|------|--------|--------|-------|
+| **Think** | `codex exec` | 분석 보고서, 구현 계획, 위험 평가 | 컨텍스트 1M, 산출물 컴팩트 → 파일 저장 |
+| **Design** | `gemini -p @image` | 디자인 스펙, UX 분석 | 컨텍스트 1M, 산출물 컴팩트 → 파일 저장 |
+| **Build** | Sonnet (or GLM) | 코드, 테스트, 커밋 | 256K~, 직접 구현 |
+| **Verify** | Codex + Gemini | 검증 판정 | 컴팩트 요약 → 사용자에게 보고 |
 
-### `ksk_review_gate` — After every external review
-Always pipe `ksk_reason` review output through `ksk_review_gate` to get a structured `PASS/FAIL` verdict and `action`.
+## When to Use External Models
 
-### `ksk_context` — Before calling `ksk_reason` or `ksk_vision`
-Build role-optimized context bundles to give external models the right information.
+- **Think**: 아키텍처, 복잡한 버그, 코드 리뷰, 성능 분석
+- **Design**: UI 작업, 화면 변경, mockup 구현, 프론트엔드 개선
+- **Verify**: 모든 구현 후 품질 확인
 
-### `ksk_status` — Check session state
-Lists recent artifacts and last classification. Use when resuming a session or debugging tool outputs.
+## Routing Guide
 
-### `ksk_hud` — Session Dashboard
-Call to see Codex/Gemini usage stats, artifact counts, and session info.
+| User Intent | Route |
+|-------------|-------|
+| Debug/crash/error | Simple → fix directly. Complex → `/ksk:complex-debug` |
+| Architecture/refactor | `/ksk:architecture` |
+| UI/design/mockup | `/ksk:ui-redesign` |
+| Visual compare/QA | `/ksk:visual-qa` |
+| Code review | `/ksk:code-review` |
+| Implement/add | Sonnet directly (디자인 필요 시 Gemini Design 먼저) |
+| Test | `/ksk:test` |
+| Unsure | `/ksk:run` |
 
-### `ksk_plan` — Auto-Discovery Planning
-Use INSTEAD of `ksk_reason` when you don't know which files are relevant. Automatically finds related files.
-
----
-
-## Natural Language → Tool Routing
-
-Understand **intent**, not just keywords:
-
-| User Says | Intent | Action |
-|-----------|--------|--------|
-| "이거 왜 안 돼?" / "에러나" | Bug — check complexity | Simple → fix directly; crash/race/intermittent → `ksk_reason(high)` |
-| "구조가 이상해" / "리팩터" / "설계 다시" | Architecture | `ksk_reason(xhigh)` → implement → `ksk_review_gate` |
-| "화면이 이상해" / "디자인 바꿔" / "목업대로" | UI/Visual | `ksk_vision(analyze)` → implement → `ksk_vision(qa)` |
-| "비교해봐" / "전이랑 달라?" | Visual QA | `ksk_vision(compare)` |
-| "만들어줘" / "추가해" / "구현해" | Implementation | Claude Sonnet directly — no external model needed |
-| "리뷰해줘" / "문제없나" | Code review | `ksk_reason(medium)` → `ksk_review_gate` |
-| "분석해줘" / "어떻게 할까?" | Depends | Code context → `ksk_reason`; image context → `ksk_vision` |
-
----
-
-## Workflow Skills
-
-Use these for complex multi-step tasks:
-- `/ksk:run` — Auto-classify and route to the right workflow
-- `/ksk:complex-debug` — Root cause analysis + fix + review loop (max 3 iterations)
-- `/ksk:architecture` — Codex xhigh analysis + phased refactoring
-- `/ksk:ui-redesign` — Gemini visual delta + implement + visual QA
-- `/ksk:visual-qa` — Screenshot comparison + structured verdict
-- `/ksk:code-review` — Deep code review with PASS/FAIL verdict
-
----
-
-## Verification Rules
-
-- After `ksk_reason` review output → always call `ksk_review_gate`
-- `PASS` → complete; `FAIL_MINOR` → self-fix and re-review; `FAIL_MAJOR` → re-analyze; `FAIL_CRITICAL` → escalate to user
-- Never claim a task complete without verification evidence
-- Artifacts saved to `.ksk/artifacts/` — use `ksk_status` to browse them
-
----
-
-## What NOT to Do
-
-- ❌ Use Claude's built-in vision for any image analysis
-- ❌ Write code with Codex (it reasons, Claude codes)
-- ❌ Skip `ksk_review_gate` after an external review
-- ❌ Ignore rate limit messages — surface them to the user with the 3 options provided
+## Rules
+- Sonnet = TEXT-ONLY. 이미지 분석은 반드시 `gemini -p @image.png "prompt"`
+- 외부 모델 산출물은 항상 `.ksk/artifact/` 파일에 저장 후 요약만 읽고 구현
+- 구현 완료 후 항상 Verify 단계 포함
+- Verify FAIL → 수정 후 최대 3회 반복

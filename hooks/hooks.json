@@ -1,18 +1,6 @@
 {
-  "description": "KhakiSketcher orchestration hooks — auto-classification, security, and file tracking",
+  "description": "KhakiSketcher hooks — session init and security guard",
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/auto-classify.mjs\"",
-            "timeout": 2
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "matcher": "*",
@@ -32,30 +20,6 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/security-guard.mjs\"",
-            "timeout": 2
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/post-tool-track.mjs\"",
-            "timeout": 2
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/run.cjs\" \"$CLAUDE_PLUGIN_ROOT/scripts/pre-compact.mjs\"",
             "timeout": 2
           }
         ]
