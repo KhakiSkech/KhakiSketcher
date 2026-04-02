@@ -20,11 +20,14 @@ process.stdin.on('end', () => {
     const cmd = toolInput.command || '';
     const dangerous = [
       /rm\s+-rf\s+[/~]/,
+      /rm\s+-rf\s+\.\./,
       /git\s+push\s+.*--force/,
       /git\s+push\s+.*-f\b/,
       /DROP\s+(TABLE|DATABASE)/i,
       /git\s+reset\s+--hard/,
       /chmod\s+-R\s+777/,
+      /rm\s+-rf\s+\//,
+      />\s*\/dev\/(sd|null|zero)/,
     ];
     for (const pattern of dangerous) {
       if (pattern.test(cmd)) {
@@ -39,7 +42,7 @@ process.stdin.on('end', () => {
 
   if (toolName === 'Write' || toolName === 'Edit') {
     const filePath = toolInput.file_path || '';
-    const sensitivePatterns = [/\.env$/, /credentials/, /secrets/, /\.pem$/, /\.key$/, /id_rsa/];
+    const sensitivePatterns = [/\.env(\.\w+)?$/, /credentials/, /secrets/, /\.pem$/, /\.key$/, /id_rsa/];
     for (const pattern of sensitivePatterns) {
       if (pattern.test(filePath)) {
         process.stdout.write(`<system-reminder>[KSK Security] Writing to sensitive file: ${filePath}. Ensure no secrets are hardcoded.</system-reminder>`);

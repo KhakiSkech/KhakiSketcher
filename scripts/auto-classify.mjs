@@ -91,7 +91,7 @@ function classify(prompt) {
   const [topCategory, topScore] = entries[0];
 
   // Only trigger if score is above threshold (confident enough)
-  if (topScore < 4) return null;
+  if (topScore < 3) return null;
 
   const skillMap = {
     architecture: { skill: 'architecture', emoji: '🏗️', label: '아키텍처 분석' },

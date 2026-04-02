@@ -20,7 +20,8 @@
     "build": "node build.mjs",
     "dev": "node build.mjs --watch",
     "test": "node --import tsx --test src/__tests__/*.test.ts",
-    "test:typecheck": "tsc --noEmit"
+    "test:typecheck": "tsc --noEmit",
+    "prepare": "npm run build"
   },
   "files": [
     "bridge",

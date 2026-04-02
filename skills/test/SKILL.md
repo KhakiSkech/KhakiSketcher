@@ -1,3 +1,8 @@
+---
+name: test
+description: Test strategy, execution, coverage analysis, and regression detection specialist.
+---
+
 # /ksk:test — Test Strategy & Execution
 
 테스트 작성, 실행, 커버리지 분석을 위한 전용 워크플로우.
