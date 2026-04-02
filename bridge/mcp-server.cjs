@@ -21065,6 +21065,40 @@ function parseRetryAfter(stderr) {
   const match = stderr.match(/retry[- ]after[:\s]+(\d+)/i);
   return match ? parseInt(match[1], 10) : void 0;
 }
+function spawnAsync(command, args, opts) {
+  return new Promise((resolve) => {
+    const child = (0, import_node_child_process2.spawn)(command, args, {
+      cwd: opts.cwd,
+      env: opts.env,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (d) => {
+      stdout += d.toString();
+    });
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      resolve({ stdout: stdout.trim(), stderr: stderr.trim() + "\nTimed out", status: null });
+    }, opts.timeout);
+    child.on("close", (status) => {
+      clearTimeout(timer);
+      resolve({ stdout: stdout.trim(), stderr: stderr.trim(), status });
+    });
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      resolve({ stdout: "", stderr: err.message, status: 1 });
+    });
+  });
+}
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 function parseJsonlOutput(raw) {
   const lines = raw.split("\n").filter((l) => l.trim());
   let lastAssistantText = null;
@@ -21086,7 +21120,7 @@ function parseJsonlOutput(raw) {
   }
   return lastAssistantText ?? resultOutput;
 }
-function runCodexOnce(prompt, effort, cwd) {
+async function runCodexOnce(prompt, effort, cwd) {
   const outFile = (0, import_node_path.join)((0, import_node_os.tmpdir)(), `ksk-codex-${Date.now()}.txt`);
   const args = [
     "exec",
@@ -21100,33 +21134,29 @@ function runCodexOnce(prompt, effort, cwd) {
     outFile,
     prompt
   ];
-  const result = (0, import_node_child_process2.spawnSync)("codex", args, {
-    cwd,
-    encoding: "utf-8",
-    timeout: 3e5,
-    stdio: ["pipe", "pipe", "pipe"],
-    env: { ...process.env }
-  });
-  const rawStdout = result.stdout?.trim() || "";
+  const result = await spawnAsync("codex", args, { cwd, env: { ...process.env }, timeout: 3e5 });
+  const rawStdout = result.stdout || "";
   const jsonlParsed = rawStdout ? parseJsonlOutput(rawStdout) : null;
   let fileOutput = "";
   if ((0, import_node_fs.existsSync)(outFile)) {
     fileOutput = (0, import_node_fs.readFileSync)(outFile, "utf-8").trim();
-    (0, import_node_fs.unlinkSync)(outFile);
+    try {
+      (0, import_node_fs.unlinkSync)(outFile);
+    } catch {
+    }
   }
   const stdout = jsonlParsed || fileOutput || rawStdout;
-  const stderr = result.stderr?.trim() || "";
-  return { stdout, stderr, status: result.status };
+  return { stdout, stderr: result.stderr, status: result.status };
 }
 var codexReasoningProvider = {
   name: "codex",
-  reason(prompt, effort, cwd = process.cwd()) {
+  async reason(prompt, effort, cwd = process.cwd()) {
     const start = Date.now();
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
-      const { stdout, stderr, status } = runCodexOnce(prompt, effort, cwd);
+      const { stdout, stderr, status } = await runCodexOnce(prompt, effort, cwd);
       if (isRateLimitError(stderr, stdout)) {
         if (attempt < RETRY_DELAYS_MS.length) {
-          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, RETRY_DELAYS_MS[attempt]);
+          await sleep(RETRY_DELAYS_MS[attempt]);
           continue;
         }
         const retryAfter = parseRetryAfter(stderr);
@@ -21155,14 +21185,14 @@ var codexReasoningProvider = {
 };
 var codexVisionProvider = {
   name: "codex",
-  analyze(prompt, images, cwd = process.cwd()) {
+  async analyze(prompt, images, cwd = process.cwd()) {
     const FALLBACK_WARNING = "\u26A0\uFE0F Codex Vision Fallback: Codex cannot decode images. Proceeding with text-based reasoning about the described content only \u2014 no actual visual analysis.";
     const imageContext = images.map((img) => `[Image path: ${img}]`).join("\n");
     const fullPrompt = `${imageContext}
 
 Analyze the described visual content (text-based reasoning only):
 ${prompt}`;
-    const result = codexReasoningProvider.reason(fullPrompt, "high", cwd);
+    const result = await codexReasoningProvider.reason(fullPrompt, "high", cwd);
     if (isRateLimited(result)) return result;
     return { ...result, output: `${FALLBACK_WARNING}
 
@@ -21190,39 +21220,60 @@ function parseRetryAfter2(text) {
   const match = text.match(/retry[- ]after[:\s]+(\d+)/i);
   return match ? parseInt(match[1], 10) : void 0;
 }
-function runGeminiOnce(prompt, model, cwd) {
+function spawnAsync2(command, args, opts) {
+  return new Promise((resolve) => {
+    const child = (0, import_node_child_process3.spawn)(command, args, {
+      cwd: opts.cwd,
+      env: opts.env,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (d) => {
+      stdout += d.toString();
+    });
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      resolve({ stdout: stdout.trim(), stderr: stderr.trim() + "\nTimed out", status: null });
+    }, opts.timeout);
+    child.on("close", (status) => {
+      clearTimeout(timer);
+      resolve({ stdout: stdout.trim(), stderr: stderr.trim(), status });
+    });
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      resolve({ stdout: "", stderr: err.message, status: 1 });
+    });
+  });
+}
+function sleep2(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+async function runGeminiOnce(prompt, model, cwd) {
   const args = [
     "-p",
     prompt,
     "-m",
     model,
     "-y",
-    // yolo: auto-approve all actions
     "--output-format",
     "text"
   ];
-  const result = (0, import_node_child_process3.spawnSync)("gemini", args, {
-    cwd,
-    encoding: "utf-8",
-    timeout: 3e5,
-    stdio: ["pipe", "pipe", "pipe"],
-    env: { ...process.env }
-  });
-  return {
-    stdout: result.stdout?.trim() || "",
-    stderr: result.stderr?.trim() || "",
-    status: result.status
-  };
+  return spawnAsync2("gemini", args, { cwd, env: { ...process.env }, timeout: 3e5 });
 }
-function runGeminiWithRetry(prompt, model, cwd) {
+async function runGeminiWithRetry(prompt, model, cwd) {
   const start = Date.now();
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS2.length; attempt++) {
-    const { stdout, stderr, status } = runGeminiOnce(prompt, model, cwd);
+    const { stdout, stderr, status } = await runGeminiOnce(prompt, model, cwd);
     const combined = stdout + stderr;
     if (isRateLimitError2(combined)) {
       if (attempt < RETRY_DELAYS_MS2.length) {
-        const waitMs = RETRY_DELAYS_MS2[attempt];
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
+        await sleep2(RETRY_DELAYS_MS2[attempt]);
         continue;
       }
       const retryAfter = parseRetryAfter2(combined);
@@ -21250,7 +21301,7 @@ function runGeminiWithRetry(prompt, model, cwd) {
 }
 var geminiProReasoningProvider = {
   name: "gemini",
-  reason(prompt, _effort, cwd = process.cwd()) {
+  async reason(prompt, _effort, cwd = process.cwd()) {
     const prefixed = `You are acting as a deep reasoning engine. Think step by step with maximum depth and rigor.
 
 ${prompt}`;
@@ -21259,7 +21310,7 @@ ${prompt}`;
 };
 var geminiProVisionProvider = {
   name: "gemini",
-  analyze(prompt, images, cwd = process.cwd(), _model) {
+  async analyze(prompt, images, cwd = process.cwd(), _model) {
     const imageRefs = images.map((img) => img.includes(" ") ? `@"${img}"` : `@${img}`).join(" ");
     const fullPrompt = `${imageRefs}
 
@@ -21269,7 +21320,7 @@ ${prompt}`;
 };
 var geminiFlashVisionProvider = {
   name: "gemini",
-  analyze(prompt, images, cwd = process.cwd(), _model) {
+  async analyze(prompt, images, cwd = process.cwd(), _model) {
     const imageRefs = images.map((img) => img.includes(" ") ? `@"${img}"` : `@${img}`).join(" ");
     const fullPrompt = `${imageRefs}
 
@@ -21301,19 +21352,23 @@ function resolveProviders() {
 This ${role} request requires Codex CLI or Gemini CLI. Install one of them and restart the session, or proceed with Claude Sonnet directly.`;
     reasoning = {
       name: "codex",
-      reason: (_prompt, _effort, _cwd) => ({
-        output: stubMsg("reasoning"),
-        provider: "codex",
-        duration_ms: 0
-      })
+      async reason(_prompt, _effort, _cwd) {
+        return {
+          output: stubMsg("reasoning"),
+          provider: "codex",
+          duration_ms: 0
+        };
+      }
     };
     const stubVision = {
       name: "gemini",
-      analyze: (_prompt, _images, _cwd) => ({
-        output: stubMsg("vision"),
-        provider: "gemini",
-        duration_ms: 0
-      })
+      async analyze(_prompt, _images, _cwd) {
+        return {
+          output: stubMsg("vision"),
+          provider: "gemini",
+          duration_ms: 0
+        };
+      }
     };
     vision = stubVision;
     visionFast = stubVision;
@@ -21521,14 +21576,14 @@ ${fileContents.join("\n\n")}
 ${args.prompt}`;
       }
     }
-    const result = reasoning.reason(fullPrompt, args.effort, args.cwd);
+    const result = await reasoning.reason(fullPrompt, args.effort, args.cwd);
     if (isRateLimited(result)) {
       recordProviderCall(result.provider, 0, 0, true, args.cwd);
       const { availability } = resolveProviders();
       const canFallback = result.provider === "codex" && availability.gemini || result.provider === "gemini" && availability.codex;
       if (canFallback) {
         const fallbackProvider = result.provider === "codex" ? geminiProReasoningProvider : codexReasoningProvider;
-        const fallbackResult = fallbackProvider.reason(fullPrompt, args.effort, args.cwd);
+        const fallbackResult = await fallbackProvider.reason(fullPrompt, args.effort, args.cwd);
         if (!isRateLimited(fallbackResult)) {
           recordProviderCall(fallbackResult.provider, fallbackResult.duration_ms, fallbackResult.output.length, false, args.cwd);
           const artifactPath2 = writeArtifact("reason", fallbackResult.output, args.prompt.slice(0, 60), args.cwd);
@@ -21621,14 +21676,14 @@ async function kskVisionHandler(args) {
     const fullPrompt = `${modePrefix[args.mode]}
 
 ${args.prompt}`;
-    const result = vision.analyze(fullPrompt, args.images, args.cwd);
+    const result = await vision.analyze(fullPrompt, args.images, args.cwd);
     if (isRateLimited(result)) {
       recordProviderCall(result.provider, 0, 0, true, args.cwd);
       const { availability } = resolveProviders();
       const canFallback = result.provider === "gemini" && availability.codex || result.provider === "codex" && availability.gemini;
       if (canFallback) {
         const fallbackVision = result.provider === "gemini" ? codexVisionProvider : args.fast ? geminiFlashVisionProvider : geminiProVisionProvider;
-        const fallbackResult = fallbackVision.analyze(fullPrompt, args.images, args.cwd);
+        const fallbackResult = await fallbackVision.analyze(fullPrompt, args.images, args.cwd);
         if (!isRateLimited(fallbackResult)) {
           recordProviderCall(fallbackResult.provider, fallbackResult.duration_ms, fallbackResult.output.length, false, args.cwd);
           const artifactPath2 = writeArtifact(
@@ -22405,7 +22460,6 @@ async function kskHudHandler(args) {
 // src/tools/ksk-plan.ts
 var import_node_fs9 = require("node:fs");
 var import_node_path6 = require("node:path");
-var import_node_child_process6 = require("node:child_process");
 var kskPlanSchema = {
   task_description: external_exports.string().describe("Task description for auto file discovery and planning"),
   effort: external_exports.enum(["low", "medium", "high", "xhigh"]).default("high"),
@@ -22468,14 +22522,11 @@ function scoreFile(filePath, keywords) {
     if (lowerPath.includes(kw.toLowerCase())) score += 2;
   }
   try {
-    const kwPatterns = keywords.slice(0, 10).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-    if (kwPatterns) {
-      const result = (0, import_node_child_process6.execSync)(
-        `grep -c -E "${kwPatterns}" "${filePath}" 2>/dev/null || echo 0`,
-        { encoding: "utf-8", timeout: 5e3 }
-      );
-      const matchCount = parseInt(result.trim(), 10);
-      if (!isNaN(matchCount)) score += matchCount;
+    const content = (0, import_node_fs9.readFileSync)(filePath, "utf-8");
+    for (const kw of keywords.slice(0, 10)) {
+      const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const matches = content.match(new RegExp(escaped, "gi"));
+      if (matches) score += matches.length;
     }
   } catch {
   }
@@ -22515,7 +22566,7 @@ ${fileContents.join("\n\n")}` : "## Context Files\n(no relevant files found)";
 
 ${args.task_description}`;
     const { reasoning } = resolveProviders();
-    const result = reasoning.reason(fullPrompt, args.effort, cwd);
+    const result = await reasoning.reason(fullPrompt, args.effort, cwd);
     if (isRateLimited(result)) {
       recordProviderCall(result.provider, 0, 0, true, args.cwd);
       return {
