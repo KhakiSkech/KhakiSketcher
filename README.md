@@ -149,6 +149,7 @@ KhakiSketcher는 **각 모델이 강한 것만 하도록** 분배합니다:
 
 | Skill | 사용 시나리오 | 외부 CLI |
 |-------|--------------|----------|
+| `/ksk:plan` | Codex+Gemini 교차 검증 계획. 한 번에 완성 | `codex exec` + `gemini -p` |
 | `/ksk:run` | 모든 작업의 진입점. 자동 분류 후 라우팅 | — |
 | `/ksk:complex-debug` | 크래시, race condition, 간헐적 버그 | `codex exec` |
 | `/ksk:architecture` | 구조 분석, 리팩터링, 마이그레이션 | `codex exec` |

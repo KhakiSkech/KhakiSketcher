@@ -55,6 +55,7 @@ UI 작업인 경우 추가:
 
 | User Intent | Route |
 |-------------|-------|
+| Plan/계획/설계 | `/ksk:plan` (Codex+Gemini 교차 검증 계획) |
 | Debug/crash/error | Simple → fix directly. Complex → `/ksk:complex-debug` |
 | Architecture/refactor | `/ksk:architecture` |
 | UI/design/mockup | `/ksk:ui-redesign` |

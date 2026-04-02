@@ -44,7 +44,7 @@ process.stdin.on('end', () => {
     `<system-reminder>`,
     `[KhakiSketcher v0.2] Providers: ${providerNote}`,
     `Model Policy: Sonnet=code | Codex=reasoning | Gemini=vision`,
-    `Skills: /ksk:run | /ksk:complex-debug | /ksk:architecture | /ksk:ui-redesign | /ksk:visual-qa | /ksk:code-review | /ksk:test`,
+    `Skills: /ksk:plan | /ksk:run | /ksk:complex-debug | /ksk:architecture | /ksk:ui-redesign | /ksk:visual-qa | /ksk:code-review | /ksk:test`,
     `</system-reminder>`,
   ].join('\n');
 
