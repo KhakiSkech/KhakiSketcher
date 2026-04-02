@@ -37,7 +37,7 @@ export async function kskVisionHandler(args: Args) {
     };
 
     const fullPrompt = `${modePrefix[args.mode]}\n\n${args.prompt}`;
-    const result = vision.analyze(fullPrompt, args.images, args.cwd);
+    const result = await vision.analyze(fullPrompt, args.images, args.cwd);
 
     if (isRateLimited(result)) {
       recordProviderCall(result.provider, 0, 0, true, args.cwd);
@@ -53,7 +53,7 @@ export async function kskVisionHandler(args: Args) {
           result.provider === 'gemini'
             ? codexVisionProvider
             : args.fast ? geminiFlashVisionProvider : geminiProVisionProvider;
-        const fallbackResult = fallbackVision.analyze(fullPrompt, args.images, args.cwd);
+        const fallbackResult = await fallbackVision.analyze(fullPrompt, args.images, args.cwd);
 
         if (!isRateLimited(fallbackResult)) {
           recordProviderCall(fallbackResult.provider, fallbackResult.duration_ms, fallbackResult.output.length, false, args.cwd);

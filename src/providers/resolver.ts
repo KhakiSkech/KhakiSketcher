@@ -15,14 +15,14 @@ export function resolveProviders(): ExtendedProviders {
   const availability = detectProviders();
   const fallbacks: string[] = [];
 
-  // Reasoning: Codex (1순위) → Gemini Pro (2순위)
+  // Reasoning: Codex (1st) → Gemini Pro (2nd)
   let reasoning: ReasoningProvider = codexReasoningProvider;
   if (!availability.codex && availability.gemini) {
     reasoning = geminiProReasoningProvider;
     fallbacks.push('reasoning: codex unavailable → gemini-2.5-pro as fallback');
   }
 
-  // Vision: Gemini Pro (1순위) → Codex (2순위)
+  // Vision: Gemini Pro (1st) → Codex (2nd)
   let vision: VisionProvider = geminiProVisionProvider;
   let visionFast: VisionProvider = geminiFlashVisionProvider;
   if (!availability.gemini && availability.codex) {
@@ -38,19 +38,23 @@ export function resolveProviders(): ExtendedProviders {
 
     reasoning = {
       name: 'codex',
-      reason: (_prompt: string, _effort: ReasoningEffort, _cwd?: string) => ({
-        output: stubMsg('reasoning'),
-        provider: 'codex',
-        duration_ms: 0,
-      }),
+      async reason(_prompt: string, _effort: ReasoningEffort, _cwd?: string) {
+        return {
+          output: stubMsg('reasoning'),
+          provider: 'codex' as const,
+          duration_ms: 0,
+        };
+      },
     };
     const stubVision: VisionProvider = {
       name: 'gemini',
-      analyze: (_prompt, _images, _cwd) => ({
-        output: stubMsg('vision'),
-        provider: 'gemini',
-        duration_ms: 0,
-      }),
+      async analyze(_prompt, _images, _cwd) {
+        return {
+          output: stubMsg('vision'),
+          provider: 'gemini' as const,
+          duration_ms: 0,
+        };
+      },
     };
     vision = stubVision;
     visionFast = stubVision;

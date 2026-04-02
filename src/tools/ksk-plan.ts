@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
-import { execSync } from 'node:child_process';
 import { smartTruncate } from '../utils/truncate.js';
 import { resolveProviders } from '../providers/resolver.js';
 import { isRateLimited } from '../providers/types.js';
@@ -87,18 +86,15 @@ function scoreFile(filePath: string, keywords: string[]): number {
     if (lowerPath.includes(kw.toLowerCase())) score += 2;
   }
 
-  // Try grep for content matches (silent on failure)
+  // Native content matching — no external grep process needed
   try {
-    const kwPatterns = keywords.slice(0, 10).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    if (kwPatterns) {
-      const result = execSync(
-        `grep -c -E "${kwPatterns}" "${filePath}" 2>/dev/null || echo 0`,
-        { encoding: 'utf-8', timeout: 5000 },
-      );
-      const matchCount = parseInt(result.trim(), 10);
-      if (!isNaN(matchCount)) score += matchCount;
+    const content = readFileSync(filePath, 'utf-8');
+    for (const kw of keywords.slice(0, 10)) {
+      const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matches = content.match(new RegExp(escaped, 'gi'));
+      if (matches) score += matches.length;
     }
-  } catch { /* grep failed — ignore */ }
+  } catch { /* unreadable file — skip */ }
 
   return score;
 }
@@ -144,7 +140,7 @@ export async function kskPlanHandler(args: Args) {
     const fullPrompt = `${fileSection}\n\n## Task\n\n${args.task_description}`;
 
     const { reasoning } = resolveProviders();
-    const result = reasoning.reason(fullPrompt, args.effort, cwd);
+    const result = await reasoning.reason(fullPrompt, args.effort, cwd);
 
     if (isRateLimited(result)) {
       recordProviderCall(result.provider, 0, 0, true, args.cwd);

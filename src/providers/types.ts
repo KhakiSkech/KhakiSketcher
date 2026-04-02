@@ -25,12 +25,12 @@ export function isRateLimited(r: ProviderResponse): r is RateLimitResult {
 
 export interface ReasoningProvider {
   name: ProviderName;
-  reason(prompt: string, effort: ReasoningEffort, cwd?: string): ProviderResponse;
+  reason(prompt: string, effort: ReasoningEffort, cwd?: string): Promise<ProviderResponse>;
 }
 
 export interface VisionProvider {
   name: ProviderName;
-  analyze(prompt: string, images: string[], cwd?: string, model?: GeminiModel): ProviderResponse;
+  analyze(prompt: string, images: string[], cwd?: string, model?: GeminiModel): Promise<ProviderResponse>;
 }
 
 export interface ProviderAvailability {

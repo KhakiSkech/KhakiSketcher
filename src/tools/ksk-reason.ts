@@ -39,7 +39,7 @@ export async function kskReasonHandler(args: Args) {
       }
     }
 
-    const result = reasoning.reason(fullPrompt, args.effort, args.cwd);
+    const result = await reasoning.reason(fullPrompt, args.effort, args.cwd);
 
     if (isRateLimited(result)) {
       recordProviderCall(result.provider, 0, 0, true, args.cwd);
@@ -53,7 +53,7 @@ export async function kskReasonHandler(args: Args) {
       if (canFallback) {
         const fallbackProvider =
           result.provider === 'codex' ? geminiProReasoningProvider : codexReasoningProvider;
-        const fallbackResult = fallbackProvider.reason(fullPrompt, args.effort, args.cwd);
+        const fallbackResult = await fallbackProvider.reason(fullPrompt, args.effort, args.cwd);
 
         if (!isRateLimited(fallbackResult)) {
           recordProviderCall(fallbackResult.provider, fallbackResult.duration_ms, fallbackResult.output.length, false, args.cwd);

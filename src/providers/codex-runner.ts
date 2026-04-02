@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -31,6 +31,47 @@ function parseRetryAfter(stderr: string): number | undefined {
   return match ? parseInt(match[1], 10) : undefined;
 }
 
+interface SpawnResult {
+  stdout: string;
+  stderr: string;
+  status: number | null;
+}
+
+function spawnAsync(command: string, args: string[], opts: { cwd: string; env: Record<string, string | undefined>; timeout: number }): Promise<SpawnResult> {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      cwd: opts.cwd,
+      env: opts.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
+    child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM');
+      resolve({ stdout: stdout.trim(), stderr: stderr.trim() + '\nTimed out', status: null });
+    }, opts.timeout);
+
+    child.on('close', (status) => {
+      clearTimeout(timer);
+      resolve({ stdout: stdout.trim(), stderr: stderr.trim(), status });
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      resolve({ stdout: '', stderr: err.message, status: 1 });
+    });
+  });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => { setTimeout(resolve, ms); });
+}
+
 /**
  * Parse JSONL output from `codex exec --json`.
  * Extracts the text content from the last assistant_message event,
@@ -45,7 +86,6 @@ function parseJsonlOutput(raw: string): string | null {
     try {
       const event = JSON.parse(line);
 
-      // Format: {"type":"message","role":"assistant","content":[{"type":"text","text":"..."}]}
       if (event.type === 'message' && event.role === 'assistant' && Array.isArray(event.content)) {
         const textParts = event.content
           .filter((c: { type: string }) => c.type === 'text')
@@ -55,7 +95,6 @@ function parseJsonlOutput(raw: string): string | null {
         }
       }
 
-      // Format: {"type":"result","output":"..."}
       if (event.type === 'result' && typeof event.output === 'string') {
         resultOutput = event.output;
       }
@@ -67,11 +106,11 @@ function parseJsonlOutput(raw: string): string | null {
   return lastAssistantText ?? resultOutput;
 }
 
-function runCodexOnce(
+async function runCodexOnce(
   prompt: string,
   effort: ReasoningEffort,
   cwd: string,
-): { stdout: string; stderr: string; status: number | null } {
+): Promise<SpawnResult> {
   const outFile = join(tmpdir(), `ksk-codex-${Date.now()}.txt`);
 
   const args = [
@@ -84,43 +123,35 @@ function runCodexOnce(
     prompt,
   ];
 
-  const result = spawnSync('codex', args, {
-    cwd,
-    encoding: 'utf-8',
-    timeout: 300_000,
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env },
-  });
+  const result = await spawnAsync('codex', args, { cwd, env: { ...process.env }, timeout: 300_000 });
 
   // Priority 1: Parse --json JSONL from stdout for precise extraction
-  const rawStdout = result.stdout?.trim() || '';
+  const rawStdout = result.stdout || '';
   const jsonlParsed = rawStdout ? parseJsonlOutput(rawStdout) : null;
 
   // Priority 2: Read -o outfile content
   let fileOutput = '';
   if (existsSync(outFile)) {
     fileOutput = readFileSync(outFile, 'utf-8').trim();
-    unlinkSync(outFile);
+    try { unlinkSync(outFile); } catch { /* skip */ }
   }
 
-  // Use JSONL-parsed output if available, then file output, then raw stdout
   const stdout = jsonlParsed || fileOutput || rawStdout;
-  const stderr = result.stderr?.trim() || '';
 
-  return { stdout, stderr, status: result.status };
+  return { stdout, stderr: result.stderr, status: result.status };
 }
 
 export const codexReasoningProvider: ReasoningProvider = {
   name: 'codex',
-  reason(prompt, effort, cwd = process.cwd()): ProviderResponse {
+  async reason(prompt, effort, cwd = process.cwd()): Promise<ProviderResponse> {
     const start = Date.now();
 
     for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
-      const { stdout, stderr, status } = runCodexOnce(prompt, effort, cwd);
+      const { stdout, stderr, status } = await runCodexOnce(prompt, effort, cwd);
 
       if (isRateLimitError(stderr, stdout)) {
         if (attempt < RETRY_DELAYS_MS.length) {
-          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, RETRY_DELAYS_MS[attempt]);
+          await sleep(RETRY_DELAYS_MS[attempt]);
           continue;
         }
         const retryAfter = parseRetryAfter(stderr);
@@ -153,12 +184,12 @@ export const codexReasoningProvider: ReasoningProvider = {
 
 export const codexVisionProvider: VisionProvider = {
   name: 'codex',
-  analyze(prompt, images, cwd = process.cwd()): ProviderResponse {
+  async analyze(prompt, images, cwd = process.cwd()): Promise<ProviderResponse> {
     const FALLBACK_WARNING =
       '⚠️ Codex Vision Fallback: Codex cannot decode images. Proceeding with text-based reasoning about the described content only — no actual visual analysis.';
     const imageContext = images.map((img) => `[Image path: ${img}]`).join('\n');
     const fullPrompt = `${imageContext}\n\nAnalyze the described visual content (text-based reasoning only):\n${prompt}`;
-    const result = codexReasoningProvider.reason(fullPrompt, 'high', cwd);
+    const result = await codexReasoningProvider.reason(fullPrompt, 'high', cwd);
     if (isRateLimited(result)) return result;
     return { ...result, output: `${FALLBACK_WARNING}\n\n${result.output}` };
   },
