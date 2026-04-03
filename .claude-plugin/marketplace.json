@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "khaki-sketcher",
+      "name": "ksk",
       "description": "CLI-native multi-model orchestrator for Claude Code. Think → Design → Build → Verify workflow with Codex + Gemini cross-validation.",
       "version": "0.2.1",
       "author": {
