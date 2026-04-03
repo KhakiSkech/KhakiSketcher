@@ -1,13 +1,30 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "khaki-sketcher",
+  "description": "CLI-native multi-model orchestrator — Cross-validated development with Codex + Gemini",
   "owner": {
-    "name": "KhakiSketch",    "url": "https://khakisketch.co.kr/"
+    "name": "KhakiSketch",
+    "url": "https://khakisketch.co.kr/"
   },
   "plugins": [
     {
       "name": "khaki-sketcher",
-      "source": ".",
-      "description": "CLI-native multi-model orchestrator for Claude Code — Cross-validated development with Codex + Gemini"
+      "description": "CLI-native multi-model orchestrator for Claude Code. Think → Design → Build → Verify workflow with Codex + Gemini cross-validation.",
+      "version": "0.2.1",
+      "author": {
+        "name": "KhakiSketch"
+      },
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://github.com/KhakiSkech/KhakiSketcher",
+      "tags": [
+        "multi-model",
+        "orchestration",
+        "cross-validation",
+        "codex",
+        "gemini"
+      ]
     }
-  ]
+  ],
+  "version": "0.2.1"
 }
