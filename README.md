@@ -251,6 +251,29 @@ claude plugin install https://github.com/KhakiSkech/KhakiSketcher
 
 빌드 없음. npm install 없음. 마크다운 + 셸 스크립트만으로 동작합니다.
 
+### 자동완성 명령어 설정 (권장)
+
+플러그인 스킬(`/ksk:plan`)은 작동하지만 자동완성에 나타나지 않습니다.
+`commands/` 디렉토리의 파일을 `~/.claude/commands/`에 복사하면 `/ksk-` 접두사로 자동완성이 활성화됩니다:
+
+```bash
+# 자동완성 명령어 설치
+cp commands/*.md ~/.claude/commands/
+```
+
+설치 후 `/ksk-` 입력 시 8개 명령어가 자동완성에 나타납니다:
+
+| 자동완성 명령어 | 플러그인 스킬 | 설명 |
+|----------------|--------------|------|
+| `/ksk-plan` | `/ksk:plan` | 교차 검증 계획 수립 |
+| `/ksk-run` | `/ksk:run` | 전체 워크플로우 실행 |
+| `/ksk-complex-debug` | `/ksk:complex-debug` | 복합 디버깅 |
+| `/ksk-architecture` | `/ksk:architecture` | 아키텍처 분석 |
+| `/ksk-ui-redesign` | `/ksk:ui-redesign` | UI 리디자인 |
+| `/ksk-visual-qa` | `/ksk:visual-qa` | 시각 QA |
+| `/ksk-code-review` | `/ksk:code-review` | 코드 리뷰 |
+| `/ksk-test` | `/ksk:test` | 테스트 실행 |
+
 ### 세션 시작 시 자동 감지
 
 KhakiSketcher는 세션 시작 시 설치된 CLI를 자동 감지합니다:
