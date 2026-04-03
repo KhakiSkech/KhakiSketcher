@@ -1,8 +1,7 @@
 {
   "name": "khaki-sketcher",
   "owner": {
-    "name": "KhakiSketch"
-    "url": "https://khakisketch.co.kr/"
+    "name": "KhakiSketch",    "url": "https://khakisketch.co.kr/"
   },
   "plugins": [
     {
