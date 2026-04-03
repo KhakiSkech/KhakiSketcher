@@ -1,0 +1,14 @@
+{
+  "name": "khaki-sketcher",
+  "owner": {
+    "name": "KhakiSketch"
+    "url": "https://khakisketch.co.kr/"
+  },
+  "plugins": [
+    {
+      "name": "khaki-sketcher",
+      "source": ".",
+      "description": "CLI-native multi-model orchestrator for Claude Code — Cross-validated development with Codex + Gemini"
+    }
+  ]
+}
