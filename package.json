@@ -7,11 +7,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/KhakiSketch/KhakiSketcher.git"
+    "url": "https://github.com/KhakiSkech/KhakiSketcher.git"
   },
-  "homepage": "https://github.com/KhakiSketch/KhakiSketcher",
+  "homepage": "https://github.com/KhakiSkech/KhakiSketcher",
   "bugs": {
-    "url": "https://github.com/KhakiSketch/KhakiSketcher/issues"
+    "url": "https://github.com/KhakiSkech/KhakiSketcher/issues"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/KhakiSketch/KhakiSketcher/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+  <a href="https://github.com/KhakiSkech/KhakiSketcher/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/Claude%20Code-plugin-purple.svg" alt="Claude Code Plugin">
   <img src="https://img.shields.io/badge/context-~800_tokens-green.svg" alt="Low overhead">
   <img src="https://img.shields.io/badge/zero_dependencies-zero_build-brightgreen.svg" alt="Zero deps">
@@ -246,7 +246,7 @@ Verdict: PASS / FAIL_MINOR / FAIL_MAJOR / FAIL_CRITICAL
 ### 플러그인 설치
 
 ```bash
-claude plugin install https://github.com/KhakiSketch/KhakiSketcher
+claude plugin install https://github.com/KhakiSkech/KhakiSketcher
 ```
 
 빌드 없음. npm install 없음. 마크다운 + 셸 스크립트만으로 동작합니다.
@@ -333,5 +333,5 @@ KhakiSketcher는 우리의 일상적인 개발 경험에서 탄생했습니다:
 [MIT](LICENSE)
 
 <p align="center">
-  <a href="https://khakisketch.co.kr/">khakisketch.co.kr</a> · <a href="https://github.com/KhakiSketch">GitHub</a>
+  <a href="https://khakisketch.co.kr/">khakisketch.co.kr</a> · <a href="https://github.com/KhakiSkech">GitHub</a>
 </p>

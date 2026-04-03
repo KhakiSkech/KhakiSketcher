@@ -5,8 +5,8 @@
   "author": {
     "name": "KhakiSketch"
   },
-  "repository": "https://github.com/KhakiSketch/KhakiSketcher",
-  "homepage": "https://github.com/KhakiSketch/KhakiSketcher",
+  "repository": "https://github.com/KhakiSkech/KhakiSketcher",
+  "homepage": "https://github.com/KhakiSkech/KhakiSketcher",
   "license": "MIT",
   "keywords": ["claude-code", "orchestration", "cli", "codex", "gemini"],
   "skills": "./skills/"
