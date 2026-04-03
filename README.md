@@ -174,7 +174,65 @@ Verdict: PASS / FAIL_MINOR / FAIL_MAJOR / FAIL_CRITICAL
   FAIL_CRITICAL → 즉시 중단
 ```
 
-### 6. 일반 구현 — 외부 모델 불필요
+### 6. 전체 워크플로우 자동 실행 — `/ksk:run`
+
+```
+👤 "이 기능 구현해줘" (뭘 쓸지 모를 때)
+
+Step 1: Classify — Sonnet이 작업 분류
+  → debug? architecture? UI? code-review? implement? test?
+
+Step 2: Think — 분류 결과에 따라 자동 라우팅
+  → 복잡하면 Codex 분석, UI면 Gemini 디자인, 단순하면 스킵
+
+Step 3: Build — Sonnet 구현
+
+Step 4: Verify — Codex/Gemini 검증
+
+→ "뭘 해야 할지 모를 때" 범용 진입점
+```
+
+### 7. 시각 QA — `/ksk:visual-qa`
+
+```
+👤 "Before/After 비교해줘"
+👤 "이 변경사항 시각적으로 확인해봐"
+
+Step 1: Before/After 이미지 경로 확인
+Step 2: Gemini pixel-level 비교
+  - 색상 정확도, 타이포그래피, 간격, border-radius
+  - UX 품질: 시각 계층, 가독성, 균형
+  - 접근성: WCAG contrast, touch target
+  - Polish: misalignment, truncation, blur
+Step 3: 점수 평가 (0-100) + PASS/FAIL 판정
+
+→ 코드 리뷰가 아닌 "화면이 맞는지" 검증
+```
+
+### 8. 테스트 — `/ksk:test`
+
+```
+👤 "이 모듈 테스트 작성해줘"
+👤 "커버리지 올려줘"
+
+Step 1: 테스트 전략 수립
+  - 변경 범위 파악, Unit/Integration/E2E 분류
+  - 경계값 분석, 동등 분할
+
+Step 2: 테스트 작성 (Sonnet)
+  - 기존 패턴 확인, "should X when Y" 네이밍
+  - happy path + edge case + error path
+
+Step 3: 실행 (npm test / vitest / jest / pytest)
+
+Step 4: 복잡한 실패 시 Codex 원인 분석
+  → test bug vs production bug 판별
+  → 최소 수정 제안
+
+→ 테스트 작성 + 커버리지 갭 분석 + 실패 원인 분석까지 한 번에
+```
+
+### 9. 일반 구현 — 외부 모델 불필요
 
 ```
 👤 "버튼 색깔 바꿔줘"
