@@ -26,7 +26,7 @@ process.stdin.on('end', () => {
       /DROP\s+(TABLE|DATABASE)/i,
       /git\s+reset\s+--hard/,
       /chmod\s+-R\s+777/,
-      />\s*\/dev\/(sd|null|zero)/,
+      />\s*\/dev\/sd/,
     ];
     for (const pattern of dangerous) {
       if (pattern.test(cmd)) {
