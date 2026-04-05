@@ -109,12 +109,9 @@ Score: N/100 | Verdict: PASS(85+) / NEEDS_WORK / FAIL" -y --output-format text 2
 - After 3 rounds → Report remaining issues to user
 
 ## Design Decision Rule
-- **시각적 결정은 항상 시안 먼저**: 색상, 레이아웃, 타이포그래피, 카피 등 시각적 요소를 사용자에게 선택해야 할 때, 텍스트로만 "A vs B"를 묻지 않는다.
-- 반드시 mockup/시안을 생성하여 시각적으로 비교한 후 결정:
-  - 색상 → 두 색상이 적용된 컴포넌트 비교 시안
-  - 레이아웃 → 2-3개 레이아웃 구조 시안
-  - 카피 → 실제 배치된 상태의 비교 시안
-  - 타이포그래피 → side-by-side 폰트 비교
+- **시각적 결정은 항상 시안 먼저**: 색상, 레이아웃, 카피 등 사용자가 선택해야 할 때 vision-analyst Agent로 비교 시안을 생성
+- 텍스트로만 "A vs B" 묻지 않기 → 반드시 시각적 비교 후 결정
+- 실행: `vision-analyst` Agent에 시안 생성 요청 → mockup 이미지 저장 → 사용자에게 비교 표시
 
 ## Error Handling
 - Gemini returns empty → fallback to Codex for text-based design analysis

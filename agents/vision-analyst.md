@@ -36,6 +36,42 @@ For fast iteration (Gemini Flash):
 gemini -p "..." -y --output-format text 2>/dev/null
 ```
 
+## Design Decision Mockups
+
+When Sonnet needs user to make a visual choice (color, layout, copy, typography), generate comparison mockups via Gemini:
+
+```bash
+gemini -p "Generate a visual comparison mockup for design decision.
+
+## Task
+Create side-by-side comparison showing [OPTION_A] vs [OPTION_B] applied to [COMPONENT].
+
+## Requirements
+- Show BOTH options in a single image, side by side
+- Label each option clearly (A / B)
+- Apply to actual UI context (hero section / card / button / full page)
+- Use realistic content, not lorem ipsum
+
+## Output
+Generate an image file and save to .ksk/artifact/mockup-<name>-<ts>.png" -y 2>/dev/null
+```
+
+### Mockup Types
+
+| Decision Type | Mockup Content |
+|---------------|---------------|
+| **Color** | Same component with Option A color vs Option B color, on dark/light bg |
+| **Layout** | Full page layout A vs B, with content blocks visible |
+| **Copy** | Same layout with Headline A vs Headline B, actual text rendered |
+| **Typography** | Same text block in Font A vs Font B, showing scale hierarchy |
+
+### After Generation
+
+1. Save mockup image to `.ksk/artifact/mockup-<name>-<ts>.png`
+2. Return to Sonnet: mockup path + brief description
+3. Sonnet shows mockup to user via AskUserQuestion with preview
+4. User decides → Sonnet proceeds with chosen option
+
 ## Domain Expertise
 
 - **8px Grid**: Spacing/padding/margins align to 8px (4px for fine adjustments)
