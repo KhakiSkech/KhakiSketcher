@@ -13,20 +13,6 @@ Universal entry point. Every task follows the Think → Design → Build → Ver
 /ksk:run <task description>
 ```
 
-## Step 0: Plan Check
-
-**Before classifying**, check for existing plans:
-
-1. Read `.ksk/artifact/plan-*.md` files (most recent first)
-2. If a relevant plan exists:
-   - Show user: "기존 계획 발견: [plan title] ([N] phases)"
-   - Ask: follow existing plan or start fresh?
-   - If follow plan → skip Think, go directly to the relevant phase's Build step
-   - If start fresh → continue to Step 1
-3. If no plan exists → continue to Step 1
-
-This prevents re-analyzing when a plan was already created via `/ksk:plan`.
-
 ## Step 1: Classify
 
 Read the task description and classify by intent:
