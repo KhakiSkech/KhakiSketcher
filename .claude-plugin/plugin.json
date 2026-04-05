@@ -1,6 +1,6 @@
 {
   "name": "ksk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CLI-native multi-model orchestrator for Claude Code",
   "author": {
     "name": "KhakiSketch"

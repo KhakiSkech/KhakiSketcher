@@ -1,6 +1,6 @@
 {
   "name": "khaki-sketcher",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Lightweight multi-model orchestration plugin for Claude Code — CLI-native, zero MCP overhead",
   "author": "KhakiSketch",
   "license": "MIT",
